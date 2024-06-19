@@ -1,87 +1,239 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-
+class SizePositionPage extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Woolha.com Flutter Tutorial',
-      home: WidgetSizeAndPositionExample(),
-    );
-  }
+  _SizePositionPageState createState() => _SizePositionPageState();
 }
 
-class WidgetSizeAndPositionExample extends StatefulWidget {
+class _SizePositionPageState extends State<SizePositionPage> with WidgetsBindingObserver {
+  final GlobalKey _imageKey = GlobalKey();
+  late Size imageSize = Size.zero;
+  late Offset imagePosition = Offset.zero;
 
-  @override
-  State<StatefulWidget> createState() {
-    return _WidgetSizeAndPositionExampleState();
-  }
-}
-class _WidgetSizeAndPositionExampleState extends State<WidgetSizeAndPositionExample> {
-
-  final GlobalKey _widgetKey = GlobalKey();
-  double _size = 300;
+  final List<Offset> dotPositions = [
+    Offset(0.2, 0.6),
+    Offset(-0.1, 0.8),
+    Offset(0.2, 0.4),
+  ];
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance?.addPostFrameCallback(_getWidgetInfo);
+    WidgetsBinding.instance?.addObserver(this);
+    WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
   }
 
-  void _getWidgetInfo(_) {
-    final RenderBox renderBox = _widgetKey.currentContext?.findRenderObject() as RenderBox;
+  @override
+  void dispose() {
+    WidgetsBinding.instance?.removeObserver(this);
+    super.dispose();
+  }
 
-    if (renderBox != null) {
-      final Size size = renderBox.size;
-      print('Size: ${size.width}, ${size.height}');
+  @override
+  void didChangeMetrics() {
+    WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
+  }
 
-      final Offset offset = renderBox.localToGlobal(Offset.zero);
-      print('Offset: ${offset.dx}, ${offset.dy}');
-      print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}');
+  getSizeAndPosition() {
+    final RenderBox? _imageBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+    if (_imageBox != null) {
+      imageSize = _imageBox.size;
+      imagePosition = _imageBox.localToGlobal(Offset.zero);
+      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('build');
+    final Orientation orientation = MediaQuery.of(context).orientation;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Woolha.com Flutter Tutorial'),
-        backgroundColor: Colors.teal,
+        title: Text("Size Position"),
       ),
-      body: Stack(
-        children: [
-          Positioned(
-            left: 50,
-            top: 100,
-            child: AnimatedContainer(
-              duration: const Duration(seconds: 3),
-              key: _widgetKey,
-              width: _size,
-              height: _size,
-              color: Colors.teal,
-              onEnd: () {
-
-              },
-            ),
+      body: Container(
+        alignment: Alignment.center,
+        child: AspectRatio(
+          key: _imageKey,
+          aspectRatio: 147/500,
+          child: Stack(
+            children: [
+              Image.asset(
+                'assets/images/ship5.jpg',
+              ),
+              ...dotPositions.map((position) => CustomPaint(
+                size: Size(10, 10),
+                painter: RedDotPainter(
+                  position: _calculateDotPosition(position, orientation),
+                ),
+              )),
+              Text("Size - $imageSize\nwidth- ${imageSize.width} Height- ${imageSize.height}\nPosition - $imagePosition \nx - ${imagePosition.dx} y-${imagePosition.dy}"),
+            ],
           ),
-          Positioned(
-            bottom: 0,
-            child: OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  _size = _size == 300 ? 100 : 300;
-                });
-              },
-              child: const Text('Change size'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
+
+  Offset _calculateDotPosition(Offset position, Orientation orientation) {
+    return Offset(
+      // position.dx * (orientation == Orientation.portrait ? imageSize.width : imageSize.height),
+      // position.dy * (orientation == Orientation.portrait ? imageSize.height : imageSize.width),
+      position.dx * imageSize.width, position.dy * imageSize.height
+    );
+  }
 }
+
+class RedDotPainter extends CustomPainter {
+  final Offset position;
+
+  RedDotPainter({required this.position});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()..color = Colors.blue;
+    canvas.drawCircle(position, 10, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: SizePositionPage(),
+  ));
+}
+
+
+
+// import 'package:flutter/cupertino.dart';
+// import 'package:flutter/material.dart';
+//
+// class SizePositionPage extends StatefulWidget {
+//   @override
+//   _SizePositionPageState createState() => _SizePositionPageState();
+// }
+//
+// class _SizePositionPageState extends State<SizePositionPage> {
+//   final GlobalKey _imageKey = GlobalKey();
+//   late Size imageSize = Size.zero; // Initialize with zero size
+//   late Offset imagePosition = Offset.zero; // Initialize with zero position
+//
+//   // List to store the positions of the red dots
+//   final List<Offset> dotPositions = [
+//     Offset(0.2, 0.6),
+//     Offset(-0.1, 0.8),
+//     Offset(0.2, 0.4),
+//   ];
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
+//   }
+//
+//   getSizeAndPosition() {
+//     final RenderBox? _imageBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+//     if (_imageBox != null) {
+//       imageSize = _imageBox.size;
+//       print('image box size ${_imageKey.currentContext?.size}');
+//       imagePosition = _imageBox.localToGlobal(Offset.zero);
+//       setState(() {});
+//       // print('inside size and position');
+//       // print('size $imageSize');
+//       // print('position $imagePosition');
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     // Retrieve the orientation using MediaQuery
+//     final Orientation orientation = MediaQuery.of(context).orientation;
+//     print('orientation $orientation');
+//     print('screen width ${MediaQuery.of(context).size.width}');
+//     print('screen height ${MediaQuery.of(context).size.height}');
+//     print('width- ${imageSize.width} Height- ${imageSize.height}');
+//     print('x - ${imagePosition.dx} y-${imagePosition.dy}');
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text("Size Position"),
+//       ),
+//       body: Container(
+//         alignment: Alignment.center,
+//             child: AspectRatio(
+//               key: _imageKey,
+//               aspectRatio: 147/500,
+//               child: Stack(
+//                 children: [
+//                     Image.asset(
+//                       'assets/images/ship5.jpg',
+//                       // key: _imageKey,
+//                       // fit: BoxFit.contain,
+//                     ),
+//                 // CustomPaint(
+//                 //     size: Size(10, 10), // Size of the red dot
+//                 //     painter: RedDotPainter(position: Offset(-0.1 * imageSize.width, 0.6 * imageSize.height)),
+//                 //   ),
+//                 //   CustomPaint(
+//                 //     size: Size(10, 10), // Size of the red dot
+//                 //     painter: RedDotPainter(
+//                 //       position: orientation == Orientation.portrait
+//                 //           ? Offset(-0.1 * MediaQuery.of(context).size.width, 0.6 * MediaQuery.of(context).size.height)
+//                 //           : Offset(-0.1 * MediaQuery.of(context).size.height, -0.6 * MediaQuery.of(context).size.width),
+//                 //     ),
+//                 //   ),
+//                   ...dotPositions.map((position) => CustomPaint(
+//                     size: Size(10, 10),
+//                     painter: RedDotPainter(
+//                       position: _calculateDotPosition(position, orientation),
+//                     ),
+//                   )),
+//                   Text("Size - $imageSize\nwidth- ${imageSize.width} Height- ${imageSize.height}\nPosition - $imagePosition \nx - ${imagePosition.dx} y-${imagePosition.dy}"),
+//                   // Text('width- ${imageSize.width} Height- ${imageSize.height}'),
+//                   // Text("Position - $imagePosition "),
+//                   // Text('x - ${imagePosition.dx} y-${imagePosition.dy}'),
+//                 ],
+//               ),
+//             ),
+//
+//             // CustomPaint(
+//             //   size: Size(10, 10), // Size of the red dot
+//             //   painter: RedDotPainter(),
+//             // ),
+//       )
+//     );
+//
+//   }
+//   Offset _calculateDotPosition(Offset position, Orientation orientation) {
+//     return Offset(
+//       position.dx * (orientation == Orientation.portrait ? imageSize.width : imageSize.height),
+//       position.dy * (orientation == Orientation.portrait ? imageSize.height : imageSize.width),
+//     );
+//   }
+// }
+//
+// class RedDotPainter extends CustomPainter {
+//   final Offset position;
+//
+//   RedDotPainter({required this.position});
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final Paint paint = Paint()..color = Colors.blue;
+//     canvas.drawCircle(position, 10, paint); // Adjust the radius as needed
+//   }
+//
+//   @override
+//   bool shouldRepaint(covariant CustomPainter oldDelegate) {
+//     return true;
+//   }
+// }
+//
+// void main() {
+//   runApp(MaterialApp(
+//     home: SizePositionPage(),
+//   ));
+// }

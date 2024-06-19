@@ -41,10 +41,10 @@ class _ShowDataState extends State<ShowData> {
     // rects.add(Rect.fromLTWH(150, 150, 75, 75));
     // rects.add(Rect.fromLTWH(300, 0, 75, 75));
 
-    initializeWorkTasks();
     ObjectBoxStore.initStore().then((_) {
       fetchData();
     });
+    initializeWorkTasks();
 
   }
 

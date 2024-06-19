@@ -3,10 +3,15 @@ import 'package:test_mapping/coordinates.dart';
 import 'package:test_mapping/drag_drop_edit.dart';
 import 'package:test_mapping/drag_drop_lock.dart';
 import 'package:test_mapping/global_key.dart';
+import 'package:test_mapping/popup_display.dart';
+import 'package:test_mapping/popup_display_options.dart';
+import 'package:test_mapping/zoom_pinch_overlay.dart';
+import 'package:test_mapping/select_legends.dart';
 import 'package:test_mapping/show_data.dart';
 import 'package:test_mapping/show_data_representation.dart';
 import 'package:test_mapping/show_edited_data.dart';
 import 'package:test_mapping/show_work_tasks.dart';
+import 'package:test_mapping/zoom_work_stations.dart';
 
 import 'drag_and_drop.dart';
 import 'entities/objectBoxStore.dart';
@@ -54,7 +59,13 @@ class MyApp extends StatelessWidget {
         '/showData': (context) => ShowData(),
         '/showDataRepresentation': (context) => ShowDataRepresentation(),
         '/coordinates': (context) => Coordinates(),
-        '/coordinatesTest': (context) => WidgetSizeAndPositionExample(),
+        '/coordinatesTest': (context) => SizePositionPage(),
+        '/selectLegends': (context) => SelectLegends(),
+        '/zoomWorkStations': (context) => ZoomWorkStations(),
+        '/zoomPinchOverlay': (context) => ZoomPinchOverlayPage(),
+        '/displayPopup': (context) => PopupDisplay(),
+        '/displayPopupOptions': (context) => PopupDisplayOptions(),
+
       },
     );
   }
@@ -86,7 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: const Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
             Text(
               'Menu',
@@ -96,34 +107,57 @@ class _MyHomePageState extends State<MyHomePage> {
                 color: Colors.black,
               ),
             ),
-            CustomButton(
-              text: 'Coordinates',
-              routeName: '/coordinates',
-            ),
+            // CustomButton(
+            //   text: 'Coordinates',
+            //   routeName: '/coordinates',
+            // ),
+            // // SizedBox(height: 150,),
+            // CustomButton(
+            //   text: 'test',
+            //   routeName: '/coordinatesTest',
+            // ),
+            // CustomButton(
+            //   text: 'Workstation View (with objectbox)',
+            //   routeName: '/showData',
+            // ),
             // SizedBox(height: 150,),
+            // CustomButton(
+            //   text: 'Workstation with Representation',
+            //   routeName: '/showDataRepresentation',
+            // ),
+            // CustomButton(
+            //   text: 'Workstation with Representation',
+            //   routeName: '/selectLegends',
+            // ),
+            // CustomButton(
+            //   text: 'Zoom Work Stations',
+            //   routeName: '/zoomWorkStations',
+            // ),
+            // CustomButton(
+            //   text: 'Zoom Pinch Overlay',
+            //   routeName: '/zoomPinchOverlay',
+            // ),
+            // CustomButton(
+            //   text: 'Display Popup',
+            //   routeName: '/displayPopup',
+            // ),
             CustomButton(
-              text: 'test',
-              routeName: '/coordinatesTest',
+              text: 'Display Popup Options',
+              routeName: '/displayPopupOptions',
             ),
-            CustomButton(
-              text: 'Workstation View (with objectbox)',
-              routeName: '/showData',
-            ),
-            // SizedBox(height: 150,),
-            CustomButton(
-              text: 'Workstation with Representation',
-              routeName: '/showDataRepresentation',
-            ),
-            // SizedBox(height: 150,),
             CustomButton(
               text: 'Edit Workstations',
               routeName: '/dragAndDropEdit',
             ),
             // SizedBox(height: 150,),
-            CustomButton(
-              text: 'Show Work Tasks',
-              routeName: '/showWorkTasks',
-            ),
+            // CustomButton(
+            //   text: 'Show Work Tasks',
+            //   routeName: '/showWorkTasks',
+            // ),
+            // CustomButton(
+            //   text: 'Select Legends',
+            //   routeName: '/selectLegends',
+            // ),
 
             // Column(
             //   // crossAxisAlignment: CrossAxisAlignment.start,
