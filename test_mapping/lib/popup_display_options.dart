@@ -49,7 +49,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
 
   Map<String, List<LegendItemData>> legendItems = {
     'Status': [
-      LegendItemData('Critical Path Mtrl', Colors.red),
+      LegendItemData('Critical Path Mtr', Colors.red),
       LegendItemData('Labor Capacity', Colors.yellow),
       LegendItemData('Safety Issues', Colors.green),
     ],
