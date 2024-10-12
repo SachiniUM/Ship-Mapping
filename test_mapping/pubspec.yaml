@@ -47,6 +47,8 @@ dependencies:
   card_swiper: ^3.0.1
   url_launcher: ^6.3.0
   shared_preferences: ^2.2.3
+  flutter_appauth: ^7.0.1
+  jwt_decoder: ^2.0.1
 
 
 dev_dependencies:

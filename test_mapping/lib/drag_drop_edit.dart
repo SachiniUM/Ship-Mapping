@@ -181,7 +181,7 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
           SizedBox(height: 16),
           FloatingActionButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/');
+              Navigator.pushNamed(context, '/homePage');
             },
             foregroundColor: Colors.white,
             backgroundColor: Colors.red,

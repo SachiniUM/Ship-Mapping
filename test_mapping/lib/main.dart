@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:test_mapping/config/user_data.dart';
 import 'package:test_mapping/coordinates.dart';
 import 'package:test_mapping/drag_drop_edit.dart';
 import 'package:test_mapping/drag_drop_lock.dart';
 import 'package:test_mapping/global_key.dart';
+import 'package:test_mapping/home_page.dart';
 import 'package:test_mapping/popup_display.dart';
 import 'package:test_mapping/popup_display_options.dart';
+import 'package:test_mapping/services/error_handling.dart';
 import 'package:test_mapping/zoom_pinch_overlay.dart';
 import 'package:test_mapping/select_legends.dart';
 import 'package:test_mapping/show_data.dart';
@@ -12,32 +17,41 @@ import 'package:test_mapping/show_data_representation.dart';
 import 'package:test_mapping/show_edited_data.dart';
 import 'package:test_mapping/show_work_tasks.dart';
 import 'package:test_mapping/zoom_work_stations.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:http/http.dart' as http;
 
+import 'config/config.dart';
 import 'drag_and_drop.dart';
 import 'entities/objectBoxStore.dart';
 import 'image_page.dart';
 import 'objectbox.g.dart';
 
+
+const FlutterAppAuth visualizerAuth = FlutterAppAuth();
+
 void main() {
-  runApp(const MyApp());
+  runApp(ShipMapping());
 }
 
-// late final Admin _admin;
-//
-// Future<void> main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   ObjectBoxStore.initStore().then((_) async {
-//     if (Admin.isAvailable()) {
-//       _admin = Admin(ObjectBoxStore.instance);
-//     }
-//
-//   runApp(const MyApp());
-//   });
-//   ObjectBoxStore.closeStore();
-// }
+late bool _isUserLoggedIn;
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ShipMapping extends StatefulWidget {
+  @override
+  State<ShipMapping> createState() {
+    return _ShipMappingState();
+  }
+}
+
+class _ShipMappingState extends State<ShipMapping> {
+
+  late int _pageIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageIndex = 1;
+    _isUserLoggedIn = false;
+  }
 
   // This widget is the root of your application.
   @override
@@ -49,11 +63,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       routes: {
-        '/': (context) => MyHomePage(title: 'Image Mapping'),
+        // '/': (context) => MyHomePage(title: 'Image Mapping'),
+        '/': (context) => LogInPage(loginFunction),
         '/imageMap': (context) => ImageMap(),
         '/dragAndDrop': (context) => CustomPainterDraggable(),
         '/dragAndDropLock': (context) => CustomPainterDraggableLock(),
-        '/dragAndDropEdit': (context) => CustomPainterDraggableEdit(),
         '/dragAndDropShow': (context) => CustomPainterDraggableShow(),
         '/showWorkTasks': (context) => ShowWorkTasks(),
         '/showData': (context) => ShowData(),
@@ -64,167 +78,132 @@ class MyApp extends StatelessWidget {
         '/zoomWorkStations': (context) => ZoomWorkStations(),
         '/zoomPinchOverlay': (context) => ZoomPinchOverlayPage(),
         '/displayPopup': (context) => PopupDisplay(),
+
+        '/dragAndDropEdit': (context) => CustomPainterDraggableEdit(),
         '/displayPopupOptions': (context) => PopupDisplayOptions(),
+        '/homePage': (context) => HomePage(),
 
       },
     );
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+  void setPageIndex(index) {
     setState(() {
-      _counter++;
+      _pageIndex = index;
     });
   }
+
+  Future<void> loginFunction() async {
+    print('login function');
+    try {
+      final AuthorizationTokenResponse? result =
+      await visualizerAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          Config.clientId,
+          Config.redirectUrl,
+          discoveryUrl: Config.discoveryUrl,
+          promptValues: ['login'],
+          scopes: ['openid', 'profile'],
+        ),
+      );
+
+      setState(() {
+        print('print token results -> access token ${result?.accessToken}');
+        print('print token results -> refresh token ${result?.refreshToken}');
+        _isUserLoggedIn = true;
+        UserData.accessToken = result?.accessToken;
+        UserData.refreshToken = result?.refreshToken;
+        UserData.idToken = result?.idToken;
+        _pageIndex = 2;
+        var token = UserData.accessToken?.split('.');
+        var payload = json.decode(ascii.decode(base64.decode(base64.normalize(token![1]))));  //decode the token
+        // print(payload['preferred_username']);
+        UserData.userId = payload['preferred_username'].toString().toUpperCase();
+      });
+    } catch (e, s) {
+      print('Error while login to the system: $e - stack: $s');
+      setState(() {
+        _isUserLoggedIn = false;
+      });
+    }
+  }
+
+
+  Future<bool> logOutFunction() async {
+    try {
+      // send logout request
+      String apiEndPoint = Config.logoutUrl;
+      Map<String, dynamic>? queryParameters = {"id_token_hint": UserData.idToken};
+
+      final response = await http.get(
+        Uri.https(Config.apiURL, apiEndPoint,queryParameters),
+        headers: {'Authorization': 'Bearer ${UserData.accessToken}'},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _isUserLoggedIn = false;
+          _pageIndex = 1;
+          UserData.userId = "";  // remove user id
+        });
+
+        // End the session
+        // final EndSessionResponse? result = await visualizerAuth.endSession(
+        //   EndSessionRequest(
+        //     idTokenHint: _idToken,
+        //     postLogoutRedirectUrl: Config.redirectUrl,
+        //     discoveryUrl: Config.discoveryUrl,
+        //   ),
+        // );
+      } else {
+        if (context.mounted) {
+          HttpErrorHandler.showStatusDialog(
+              context, response.statusCode, response.reasonPhrase!);
+          Navigator.pushReplacementNamed(context, '/');
+        }
+      }
+    } catch (e, s) {
+      print('Error while login to the system: $e - stack: $s');
+      setState(() {
+        _isUserLoggedIn = true;
+      });
+    }
+    return _isUserLoggedIn;
+  }
+}
+
+class LogInPage extends StatelessWidget {
+  // ignore: prefer_typing_uninitialized_variables
+  final loginFunction;
+
+  const LogInPage(this.loginFunction);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Text(
-              'Menu',
-              style: TextStyle(
-                fontSize: 40.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset("assets/images/IdeastoSolutionLogo.jpg", scale: 0.5),
+          Center(
+            heightFactor: 1.5,
+            child: ElevatedButton(
+              style: ButtonStyle(
+                fixedSize: MaterialStatePropertyAll(Size(250, 40)),
               ),
+              onPressed: () {
+                loginFunction().then((_) {
+                  if (_isUserLoggedIn == true) {
+                    // Navigate to home page after login successful
+                    Navigator.pushNamed(context, '/homePage');
+                  }
+                });
+                // loginFunction();
+              },
+              child: Text('Sign In', textScaler: TextScaler.linear(1.4)),
             ),
-            // CustomButton(
-            //   text: 'Coordinates',
-            //   routeName: '/coordinates',
-            // ),
-            // // SizedBox(height: 150,),
-            // CustomButton(
-            //   text: 'test',
-            //   routeName: '/coordinatesTest',
-            // ),
-            // CustomButton(
-            //   text: 'Workstation View (with objectbox)',
-            //   routeName: '/showData',
-            // ),
-            // SizedBox(height: 150,),
-            // CustomButton(
-            //   text: 'Workstation with Representation',
-            //   routeName: '/showDataRepresentation',
-            // ),
-            // CustomButton(
-            //   text: 'Workstation with Representation',
-            //   routeName: '/selectLegends',
-            // ),
-            // CustomButton(
-            //   text: 'Zoom Work Stations',
-            //   routeName: '/zoomWorkStations',
-            // ),
-            // CustomButton(
-            //   text: 'Zoom Pinch Overlay',
-            //   routeName: '/zoomPinchOverlay',
-            // ),
-            // CustomButton(
-            //   text: 'Display Popup',
-            //   routeName: '/displayPopup',
-            // ),
-            CustomButton(
-              text: 'Display Popup Options',
-              routeName: '/displayPopupOptions',
-            ),
-            CustomButton(
-              text: 'Edit Workstations',
-              routeName: '/dragAndDropEdit',
-            ),
-            // SizedBox(height: 150,),
-            // CustomButton(
-            //   text: 'Show Work Tasks',
-            //   routeName: '/showWorkTasks',
-            // ),
-            // CustomButton(
-            //   text: 'Select Legends',
-            //   routeName: '/selectLegends',
-            // ),
-
-            // Column(
-            //   // crossAxisAlignment: CrossAxisAlignment.start,
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: <Widget>[
-            //     CustomButton(
-            //       text: 'Workstation View (with objectbox)',
-            //       routeName: '/showData',
-            //     ),
-            //     // SizedBox(height: 150,),
-            //     CustomButton(
-            //       text: 'Workstation with Representation',
-            //       routeName: '/showDataRepresentation',
-            //     ),
-            //     // SizedBox(height: 150,),
-            //     CustomButton(
-            //       text: 'Edit Workstations',
-            //       routeName: '/dragAndDropEdit',
-            //     ),
-            //     // SizedBox(height: 150,),
-            //     CustomButton(
-            //       text: 'Show Work Tasks',
-            //       routeName: '/showWorkTasks',
-            //     ),
-            //   ],
-            // )
-
-          ],
-        ),
-      ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: _incrementCounter,
-      //   tooltip: 'Increment',
-      //   child: const Icon(Icons.add),
-      // ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
-}
-
-
-class CustomButton extends StatelessWidget {
-  final String text;
-  final String routeName;
-
-  const CustomButton({
-    Key? key,
-    required this.text,
-    required this.routeName,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    Color buttonColor = Colors.blue;
-    return ElevatedButton(
-      onPressed: () {
-        Navigator.pushNamed(context, routeName);
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue, // Set the background color directly
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 16, color: Colors.white), // Set text color directly
+          ),
+        ],
       ),
     );
   }

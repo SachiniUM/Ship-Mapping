@@ -44,8 +44,6 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     Colors.orange
   ];
   List<WorkTask> workTasks = [];
-  int _draggingIndex = -1; // Index of the rectangle being dragged
-  Offset _draggingOffset = Offset.zero; // Offset of the dragging position relative to the rectangle's position
   List<bool> tickedStatuses = [true, true, true];
   String selectedFilter = 'Status';
 
