@@ -357,6 +357,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                     workTasks,
                                     _maximumZoomReached,
                                     tickedStatuses,
+                                    workOrders,
                                     context,
                                   ),
                                   child: Container(),
@@ -1359,8 +1360,9 @@ class RectanglePainterPriority extends CustomPainter {
   final bool maximumZoomReached;
   final BuildContext context;
   final List<bool> tickedStatuses;
+  final List<dynamic> workOrders;
 
-  RectanglePainterPriority(this.rects, this.colors, this.workTasks, this.maximumZoomReached, this.tickedStatuses,this.context);
+  RectanglePainterPriority(this.rects, this.colors, this.workTasks, this.maximumZoomReached, this.tickedStatuses,this.workOrders,this.context);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1369,29 +1371,31 @@ class RectanglePainterPriority extends CustomPainter {
 
       if (maximumZoomReached) {
         // Initialize counters for different task statuses
-        int highCount = 0;
-        int mediumCount = 0;
-        int lowCount = 0;
-
-        // Count tasks with different statuses for the current rectangle
-        for (var task in workTasks) {
-          if (task.workStaId == i + 1) {
-            if (task.priority == 'High') {
-              highCount++;
-            } else if (task.priority == 'Medium') {
-              mediumCount++;
-            } else if (task.priority == 'Low') {
-              lowCount++;
-            }
-          }
+        String workTypeId;
+        if (i == 0) {
+          workTypeId = 'I2S-100'; // Top-left
+        } else if (i == 1) {
+          workTypeId = 'I2S-110'; // Top-right
+        } else if (i == 2) {
+          workTypeId = 'I2S-120'; // Bottom-left
+        } else {
+          workTypeId = 'I2S-130'; // Bottom-right
         }
 
-        String assignedLabel = tickedStatuses[0] ? 'High: $highCount\n\n' : '';
-        String completedLabel = tickedStatuses[2] ? 'Low: $lowCount\n\n' : '';
+        int highCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['PriorityId'] == '1' || wo['PriorityId'] == '2')).length;
+
+        int lowCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['PriorityId'] == '3' || wo['PriorityId'] == '4' || wo['PriorityId'] == '5')).length;
+
+        String highCountLabel = tickedStatuses[0] ? 'High: $highCount\n\n' : '';
+        String lowCountLabel = tickedStatuses[2] ? 'Low: $lowCount\n\n' : '';
 
         TextPainter painter = TextPainter(
           text: TextSpan(
-            text: '$assignedLabel$completedLabel',
+            text: '$highCountLabel$lowCountLabel',
             style: TextStyle(color: Colors.white, fontSize: 6.0),
           ),
           textAlign: TextAlign.center,
@@ -1404,19 +1408,38 @@ class RectanglePainterPriority extends CustomPainter {
         );
       }else {
         // Initialize counters for different task statuses
-        int highCount = 0;
-        int lowCount = 0;
+        // int highCount = 0;
+        // int lowCount = 0;
+        //
+        // // Count tasks with different statuses for the current rectangle
+        // for (var task in workTasks) {
+        //   if (task.workStaId == i + 1) {
+        //     if (task.priority == 'High') {
+        //       highCount++;
+        //     } else if (task.priority == 'Low') {
+        //       lowCount++;
+        //     }
+        //   }
+        // }
 
-        // Count tasks with different statuses for the current rectangle
-        for (var task in workTasks) {
-          if (task.workStaId == i + 1) {
-            if (task.priority == 'High') {
-              highCount++;
-            } else if (task.priority == 'Low') {
-              lowCount++;
-            }
-          }
+        String workTypeId;
+        if (i == 0) {
+          workTypeId = 'I2S-100'; // Top-left
+        } else if (i == 1) {
+          workTypeId = 'I2S-110'; // Top-right
+        } else if (i == 2) {
+          workTypeId = 'I2S-120'; // Bottom-left
+        } else {
+          workTypeId = 'I2S-130'; // Bottom-right
         }
+
+        int highCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['PriorityId'] == '1' || wo['PriorityId'] == '2')).length;
+
+        int lowCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['PriorityId'] == '3' || wo['PriorityId'] == '4' || wo['PriorityId'] == '5')).length;
 
         // Draw circles showing the count of work tasks with different statuses in the middle of the rectangle
         // double circleRadius = 15.0;
