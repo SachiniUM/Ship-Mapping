@@ -157,10 +157,10 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
 
       // Define your initial workstations
       List<WorkStation> initialWorkStations = [
-        WorkStation(workStationId: 1, left: 0.1, top: 0.1),
-        WorkStation(workStationId: 2, left: 0.1, top: 0.2),
-        WorkStation(workStationId: 3, left: 0.4, top: 0.3),
-        WorkStation(workStationId: 4, left: 0.1, top: 0.6),
+        WorkStation(workStationId: 1, left: 0.5, top: 0.1),
+        WorkStation(workStationId: 2, left: 0.4, top: 0.3),
+        WorkStation(workStationId: 3, left: 0.4, top: 0.6),
+        WorkStation(workStationId: 4, left: 0.3, top: 0.8),
         // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
       ];
 
