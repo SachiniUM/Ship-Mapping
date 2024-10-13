@@ -72,7 +72,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
       LegendItemData('Preparation', Colors.yellow),
       LegendItemData('Ongoing', Colors.green),
     ],
-    'Date': [
+    'Priority': [
       LegendItemData('High Priority', Colors.red),
       LegendItemData('Low Priority', Colors.green),
     ],
@@ -123,6 +123,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
           'ErrDescr': data["value"][i]["ErrDescr"],
           'WorkTypeId': data["value"][i]["WorkTypeId"],
           'Objstate': data["value"][i]["Objstate"],
+          'PriorityId':data["value"][i]["PriorityId"]
         }); //add the record to the workTasks array as a map
         print("wo no : ${workOrdersOnline[i]}");
         print("count : $i");
@@ -350,7 +351,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                     workOrders,
                                     context,
                                   )
-                                      : RectanglePainterDate(
+                                      : RectanglePainterPriority(
                                     rects,
                                     colors,
                                     workTasks,
@@ -374,7 +375,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                         children: [
                           DropdownButton<String>(
                             value: selectedFilter,
-                            items: <String>['Status', 'Date'].map((String value) {
+                            items: <String>['Status', 'Priority'].map((String value) {
                               return DropdownMenuItem<String>(
                                 value: value,
                                 child: Text(value),
@@ -424,8 +425,8 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
         if(selectedFilter == 'Status'){
           showPopup(context, i);
           return;
-        }else if(selectedFilter == 'Date'){
-          showPopupDate(context, i);
+        }else if(selectedFilter == 'Priority'){
+          showPopupPriority(context, i);
           return;
         }
 
@@ -433,12 +434,17 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     }
   }
 
+  Uri createWorkOrderUrl(String woNo) {
+    return Uri.parse(
+        "https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20$woNo");
+  }
+
 
   void showPopup(BuildContext context, int rectIndex) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double popupWidth = screenWidth * 0.6;
     final double popupHeight = screenWidth * 1;
-    String urlWorkOrder = "https://ifscloud.tsunamit.com/main/ifsapplications/projection/v1/PrepareWorkOrderHandling.svc/ActiveSeparateSet(WoNo=385)/WorkTaskeArray";
+
     // int workStationId = rectIndex + 1;
 
     // List<WorkTask> getFilteredTasks(String status) {
@@ -540,7 +546,6 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                               itemBuilder:
                                   (BuildContext context, int index) {
                                 var workOrder = requestedWorkOrders[index];
-                                Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20${workOrder['WoNo']}");
                                 return Card(
                                   color: AppColors.red,
                                   child: Padding(
@@ -556,7 +561,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                             Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
-                                                launchUrl(_url);
+                                                launchUrl(createWorkOrderUrl(workOrder['WoNo'].toString()));
                                               },
                                               child: Icon(Icons.link, color: Colors.black),
                                             ),
@@ -565,7 +570,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         // Text(
                                         //     'WO No: ${task.WoNo.toString()}'),
                                         Text('Description: ${workOrder['ErrDescr']}'),
-                                        // Text('Start Date: ${workOrder.startDate}'),
+                                        Text('Object State: ${workOrder['Objstate']}'),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -637,7 +642,6 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                               itemBuilder:
                                   (BuildContext context, int index) {
                                     var workOrder = ongoingWorkOrders[index];
-                                    Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20${workOrder['WoNo']}");
                                 return Card(
                                   color: AppColors.yellow,
                                   child: Padding(
@@ -654,14 +658,14 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                             Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
-                                                launchUrl(_url);
+                                                launchUrl(createWorkOrderUrl(workOrder['WoNo'].toString()));
                                               },
                                               child: Icon(Icons.link, color: Colors.black),
                                             ),
                                           ],
                                         ),
                                         Text('Description: ${workOrder['ErrDescr']}'),
-                                        // Text('Start Date: ${task.startDate}'),
+                                        Text('Object State: ${workOrder['Objstate']}'),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -733,7 +737,6 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                               itemBuilder:
                                   (BuildContext context, int index) {
                                 var workOrder = safetyIssuesTasks[index];
-                                Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20${workOrder['WoNo']}");
                                 return Card(
                                   color: AppColors.green,
                                   child: Padding(
@@ -750,14 +753,14 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                             Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
-                                                launchUrl(_url);
+                                                launchUrl(createWorkOrderUrl(workOrder['WoNo'].toString()));
                                               },
                                               child: Icon(Icons.link, color: Colors.black),
                                             ),
                                           ],
                                         ),
                                         Text('Description: ${workOrder['ErrDescr']}'),
-                                        // Text('Start Date: ${task.startDate}'),
+                                        Text('Object State: ${workOrder['Objstate']}'),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -818,21 +821,30 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     );
   }
 
-  void showPopupDate(BuildContext context, int rectIndex) {
+  void showPopupPriority(BuildContext context, int rectIndex) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double popupWidth = screenWidth * 0.6;
     final double popupHeight = screenWidth * 1;
-    int workStationId = rectIndex + 1;
+    // int workStationId = rectIndex + 1;
+    //
+    // List<WorkTask> getFilteredTasks(String status) {
+    //   return workTasks
+    //       .where((task) =>
+    //   task.priority == status && task.workStaId == rectIndex + 1)
+    //       .toList();
+    // }
 
-    List<WorkTask> getFilteredTasks(String status) {
-      return workTasks
-          .where((task) =>
-      task.priority == status && task.workStaId == rectIndex + 1)
+    String workTypeId = workTypeIds[rectIndex];
+    print("work type Id : $workTypeId");
+
+    List<dynamic> getFilteredOrders(List<String> priorityIds) {
+      return workOrders
+          .where((order) => priorityIds.contains(order['PriorityId']) && order['WorkTypeId'] == workTypeId)
           .toList();
     }
 
-    List<WorkTask> highPriorityTasks = getFilteredTasks('High');
-    List<WorkTask> lowPriorityTasks = getFilteredTasks('Low');
+    List<dynamic> highPriorityTasks = getFilteredOrders(['1','2']);
+    List<dynamic> lowPriorityTasks = getFilteredOrders(['3','4','5']);
 
     showDialog(
       context: context,
@@ -877,7 +889,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                         children: [
                           Center(
                             child: Text(
-                              'Work Station : $workStationId',
+                              'Work Station : $workTypeId',
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20.0,
@@ -907,7 +919,8 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                               itemCount: highPriorityTasks.length,
                               itemBuilder:
                                   (BuildContext context, int index) {
-                                WorkTask task = highPriorityTasks[index];
+                                var workOrder = highPriorityTasks[index];
+                                // WorkTask task = highPriorityTasks[index];
                                 return Card(
                                   color: AppColors.red,
                                   child: Padding(
@@ -919,10 +932,10 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text('WO No: ${task.WoNo.toString()}'),
+                                            Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
-                                                launchUrl(_url);
+                                                launchUrl(createWorkOrderUrl(workOrder['WoNo'].toString()));
                                               },
                                               child: Icon(Icons.link, color: Colors.black),
                                             ),
@@ -930,28 +943,27 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         ),
                                         // Text(
                                         //     'WO No: ${task.WoNo.toString()}'),
-                                        Text('Description: ${task.description}'),
-                                        Text('Start Date: ${task.startDate}'),
-                                        Text('Status: ${task.status}'),
+                                        Text('Description:  ${workOrder['ErrDescr']}'),
+                                        Text('Priority Level: ${workOrder['PriorityId']}'),
                                         SizedBox(
                                           height: 10,
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceEvenly,
-                                          children: [
-                                            buildStyledButton(
-                                              label: 'Low Priority',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Low');
-                                              },
-                                              color: AppColors.green,
-                                            ),
-                                          ],
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment:
+                                        //   MainAxisAlignment
+                                        //       .spaceEvenly,
+                                        //   children: [
+                                        //     buildStyledButton(
+                                        //       label: 'Low Priority',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Low');
+                                        //       },
+                                        //       color: AppColors.green,
+                                        //     ),
+                                        //   ],
+                                        // ),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -994,7 +1006,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                               itemCount: lowPriorityTasks.length,
                               itemBuilder:
                                   (BuildContext context, int index) {
-                                WorkTask task = lowPriorityTasks[index];
+                                var workOrder = lowPriorityTasks[index];
                                 return Card(
                                   color: AppColors.green,
                                   child: Padding(
@@ -1008,37 +1020,36 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text('WO No: ${task.WoNo.toString()}'),
+                                            Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
-                                                launchUrl(_url);
+                                                launchUrl(createWorkOrderUrl(workOrder['WoNo'].toString()));
                                               },
                                               child: Icon(Icons.link, color: Colors.black),
                                             ),
                                           ],
                                         ),
-                                        Text('Description: ${task.description}'),
-                                        Text('Start Date: ${task.startDate}'),
-                                        Text('Status: ${task.status}'),
+                                        Text('Description:  ${workOrder['ErrDescr']}'),
+                                        Text('Priority Level: ${workOrder['PriorityId']}'),
                                         SizedBox(
                                           height: 10,
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceEvenly,
-                                          children: [
-                                            buildStyledButton(
-                                              label: 'High Priority',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'High');
-                                              },
-                                              color: AppColors.red,
-                                            ),
-                                          ],
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment:
+                                        //   MainAxisAlignment
+                                        //       .spaceEvenly,
+                                        //   children: [
+                                        //     buildStyledButton(
+                                        //       label: 'High Priority',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'High');
+                                        //       },
+                                        //       color: AppColors.red,
+                                        //     ),
+                                        //   ],
+                                        // ),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -1341,7 +1352,7 @@ class RectanglePainter extends CustomPainter {
 }
 
 
-class RectanglePainterDate extends CustomPainter {
+class RectanglePainterPriority extends CustomPainter {
   final List<Rect> rects;
   final List<Color> colors;
   final List<WorkTask> workTasks;
@@ -1349,7 +1360,7 @@ class RectanglePainterDate extends CustomPainter {
   final BuildContext context;
   final List<bool> tickedStatuses;
 
-  RectanglePainterDate(this.rects, this.colors, this.workTasks, this.maximumZoomReached, this.tickedStatuses,this.context);
+  RectanglePainterPriority(this.rects, this.colors, this.workTasks, this.maximumZoomReached, this.tickedStatuses,this.context);
 
   @override
   void paint(Canvas canvas, Size size) {
