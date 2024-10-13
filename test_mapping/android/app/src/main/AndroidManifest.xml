@@ -22,7 +22,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-                <data android:scheme="erp_visualizer"
+                <data android:scheme="test_mapping"
                     android:host="org.i2s.erpvisualizer://login-callback"/>
             </intent-filter>
         </activity>

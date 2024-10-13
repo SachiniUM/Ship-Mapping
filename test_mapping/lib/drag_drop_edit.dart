@@ -27,7 +27,7 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
     Colors.purpleAccent,
     Colors.tealAccent,
     Colors.brown,
-    Colors.orange
+    // Colors.orange
   ];
   int _draggingIndex = -1;
   Offset _draggingOffset = Offset.zero;

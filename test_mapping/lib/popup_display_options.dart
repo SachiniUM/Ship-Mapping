@@ -82,11 +82,11 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
   void initState() {
     super.initState();
     // initializeWorkTasks();
-    // ObjectBoxStore.initStore().then((_) {
-    //   checkAndInsertInitialData().then((_) {
-    //     fetchData();
-    //   });
-    // });
+    ObjectBoxStore.initStore().then((_) {
+      checkAndInsertInitialData().then((_) {
+        fetchData();
+      });
+    });
 
     // WidgetsBinding.instance?.addObserver(this);
     // WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
@@ -160,7 +160,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
         WorkStation(workStationId: 2, left: 0.1, top: 0.2),
         WorkStation(workStationId: 3, left: 0.4, top: 0.3),
         WorkStation(workStationId: 4, left: 0.1, top: 0.6),
-        WorkStation(workStationId: 5, left: 0.2, top: 0.1),
+        // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
       ];
 
       await box.putMany(initialWorkStations);
@@ -195,7 +195,8 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
       imageSize = _imageBox.size;
       imagePosition = _imageBox.localToGlobal(Offset.zero);
       setState(() {
-        divideAndPlaceRectangles();
+        // divideAndPlaceRectangles();
+        fetchData();
       });
     }
   }
