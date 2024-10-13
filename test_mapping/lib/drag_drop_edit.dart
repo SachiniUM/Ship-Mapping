@@ -6,6 +6,11 @@ import 'entities/objectBoxStore.dart';
 import 'entities/workstation_positions.dart';
 
 class CustomPainterDraggableEdit extends StatefulWidget {
+
+  CustomPainterDraggableEdit({super.key, required this.logOutFunction, required this.refreshTokenFunction});
+  final logOutFunction;
+  final refreshTokenFunction;
+
   @override
   _CustomPainterDraggableEditState createState() =>
       _CustomPainterDraggableEditState();

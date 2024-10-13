@@ -79,8 +79,14 @@ class _ShipMappingState extends State<ShipMapping> {
         '/zoomPinchOverlay': (context) => ZoomPinchOverlayPage(),
         '/displayPopup': (context) => PopupDisplay(),
 
-        '/dragAndDropEdit': (context) => CustomPainterDraggableEdit(),
-        '/displayPopupOptions': (context) => PopupDisplayOptions(),
+        '/dragAndDropEdit': (context) => CustomPainterDraggableEdit(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
+        '/displayPopupOptions': (context) => PopupDisplayOptions(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
         '/homePage': (context) => HomePage(),
 
       },
@@ -169,6 +175,47 @@ class _ShipMappingState extends State<ShipMapping> {
       });
     }
     return _isUserLoggedIn;
+  }
+
+  // refresh the access token using refresh token
+  Future<String?> refreshTokenFunction() async {
+    Map<String, dynamic> requestBody = {
+      "client_id": Config.clientId,
+      "grant_type": "refresh_token",
+      "refresh_token": UserData.refreshToken,
+    };
+
+    // Encode the request body to x-www-form-urlencoded format
+    String encodedBody = requestBody.entries
+        .map((entry) => '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value.toString())}')
+        .join('&');
+
+    String apiEndPoint = Config.tokenUrl;
+
+    final response = await http.post(
+      Uri.https(Config.apiURL, apiEndPoint),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: encodedBody,
+    );
+
+    if (response.statusCode == 200) {
+      // Parse the JSON response
+      Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+      // Extract tokens and reset to variables
+      setState(() {
+        _isUserLoggedIn = true;
+        UserData.idToken = jsonResponse['id_token'];
+        UserData.accessToken = jsonResponse['access_token'];
+        UserData.refreshToken = jsonResponse['refresh_token'];
+      });
+      return UserData.accessToken;
+    } else {
+      print('Request failed with status: ${response.statusCode}');
+      return 'unsuccessful';
+    }
   }
 }
 

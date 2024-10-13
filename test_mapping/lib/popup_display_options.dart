@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 import 'package:card_swiper/card_swiper.dart';
@@ -5,13 +6,22 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:test_mapping/config/user_data.dart';
 import 'package:test_mapping/constants.dart';
+import 'package:test_mapping/services/error_handling.dart';
 
+import 'common/logout_popup.dart';
 import 'entities/objectBoxStore.dart';
 import 'entities/workstation_positions.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:test_mapping/services/api_service.dart' as apiService;
 
 class PopupDisplayOptions extends StatefulWidget {
+
+  PopupDisplayOptions({super.key, required this.logOutFunction, required this.refreshTokenFunction});
+  final logOutFunction;
+  final refreshTokenFunction;
+
   @override
   _PopupDisplayOptionsState createState() => _PopupDisplayOptionsState();
 }
@@ -28,12 +38,22 @@ class WorkTask {
   WorkTask(this.status, this.workStaId, this.WoNo, this.description, this.startDate, this.priority);
 }
 
+// class RectWithId {
+//   final Rect rect;
+//   final String id;
+//
+//   RectWithId({required this.rect, required this.id});
+// }
+
 class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsBindingObserver{
   final GlobalKey _imageKey = GlobalKey();
   late Size imageSize = Size.zero;
   late Offset imagePosition = Offset.zero;
   final Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/WorkTask/Form;%24filter=TaskSeq%20eq%2044");
-
+  var workOrders=[];
+  Future<void>? workOrderListFuture;
+  // List<RectWithId> rectsWithIds = [];
+  List<String> workTypeIds = ['I2S-100', 'I2S-110', 'I2S-120', 'I2S-130'];
 
   List<Rect> rects = [];
   List<Color> colors = [
@@ -41,7 +61,6 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     Colors.purpleAccent,
     Colors.tealAccent,
     Colors.brown,
-    Colors.orange
   ];
   List<WorkTask> workTasks = [];
   List<bool> tickedStatuses = [true, true, true];
@@ -49,9 +68,9 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
 
   Map<String, List<LegendItemData>> legendItems = {
     'Status': [
-      LegendItemData('Critical Path Mtr', Colors.red),
-      LegendItemData('Labor Capacity', Colors.yellow),
-      LegendItemData('Safety Issues', Colors.green),
+      LegendItemData('Requested', Colors.red),
+      LegendItemData('Preparation', Colors.yellow),
+      LegendItemData('Ongoing', Colors.green),
     ],
     'Date': [
       LegendItemData('High Priority', Colors.red),
@@ -62,15 +81,68 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
   @override
   void initState() {
     super.initState();
-    initializeWorkTasks();
-    ObjectBoxStore.initStore().then((_) {
-      checkAndInsertInitialData().then((_) {
-        fetchData();
+    // initializeWorkTasks();
+    // ObjectBoxStore.initStore().then((_) {
+    //   checkAndInsertInitialData().then((_) {
+    //     fetchData();
+    //   });
+    // });
+
+    // WidgetsBinding.instance?.addObserver(this);
+    // WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
+
+    // Ensure the function runs after the first frame is rendered
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   getSizeAndPosition();
+    // });
+
+    workOrderListFuture = getWorkOrderList();
+  }
+
+
+  Future<void> getWorkOrderList() async {
+    print("from online get work order list");
+    final serverCall = await apiService.Methods();
+    String apiEndPoint =
+        "main/ifsapplications/projection/v1/ActiveWorkOrdersHandling.svc/ActiveSeparateSet"; //api endpoint
+
+    Map<String, dynamic>? queryParameters = {
+      "\$filter":"(WorkTypeId eq 'I2S-100') or (WorkTypeId eq 'I2S-110') or (WorkTypeId eq 'I2S-120') or (WorkTypeId eq 'I2S-130')",
+      "\$orderby":"WoNo"
+    };
+
+    var response = await serverCall.getWithParameters(
+        UserData.accessToken, apiEndPoint, queryParameters,widget.refreshTokenFunction); //call the getWithParameters method to get the work tasks
+
+    List<Map<String, dynamic>> workOrdersOnline = [];
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+      for (var i = 0; i < data["value"].length; i++) {
+        workOrdersOnline.add({
+          'WoNo': data["value"][i]["WoNo"],
+          'ErrDescr': data["value"][i]["ErrDescr"],
+          'WorkTypeId': data["value"][i]["WorkTypeId"],
+          'Objstate': data["value"][i]["Objstate"],
+        }); //add the record to the workTasks array as a map
+        print("wo no : ${workOrdersOnline[i]}");
+        print("count : $i");
+      }
+    }else if(response.body == 'Token refresh failed'){
+      if(context.mounted){
+        showLogoutPopup(context, widget.logOutFunction);
+      }
+    }else {
+      if(context.mounted){
+        HttpErrorHandler.showStatusDialog(context, response.statusCode, response.reasonPhrase!);
+      }
+    }
+    setState(() {
+      print("work orders : $workOrders");
+      workOrders = workOrdersOnline;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        getSizeAndPosition();
       });
     });
-
-    WidgetsBinding.instance?.addObserver(this);
-    WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
   }
 
   Future<void> checkAndInsertInitialData() async {
@@ -101,7 +173,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
   @override
   void dispose(){
     super.dispose();
-    ObjectBoxStore.closeStore();
+    // ObjectBoxStore.closeStore();
     WidgetsBinding.instance?.removeObserver(this);
   }
 
@@ -116,14 +188,51 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
   }
 
   getSizeAndPosition() {
+    print("inside get size and position");
     final RenderBox? _imageBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+    print("image box : $_imageBox");
     if (_imageBox != null) {
       imageSize = _imageBox.size;
       imagePosition = _imageBox.localToGlobal(Offset.zero);
       setState(() {
-        fetchData();
+        divideAndPlaceRectangles();
       });
     }
+  }
+
+  void divideAndPlaceRectangles() {
+    print('inside fetch data ---- image size ${imageSize}');
+    if (imageSize == Size.zero) return;
+
+    double halfWidth = imageSize.width / 2;
+    double halfHeight = imageSize.height / 2;
+
+    setState(() {
+      print("rects: ${Rect}");
+      late var height;
+      var width;
+      if(MediaQuery.of(context).size.width > MediaQuery.of(context).size.height){
+        height = MediaQuery.of(context).size.width * 0.05;
+      }else{
+        height = MediaQuery.of(context).size.height * 0.05;
+      }
+
+      // Define rectangles in the four corners
+      rects = [
+        // Top left
+        Rect.fromCenter(center: Offset(halfWidth/2, halfHeight/2), width: height, height: height),
+        // Rect.fromLTWH(0.0, 0.0, halfWidth, halfHeight),
+        // Top right
+        Rect.fromCenter(center: Offset((halfWidth+halfWidth/2), halfHeight/2), width: height, height: height),
+        // Rect.fromLTWH(halfWidth, 0.0, halfWidth, halfHeight),
+        // Bottom left
+        Rect.fromCenter(center: Offset(halfWidth/2, (halfHeight+halfHeight/2)), width: height, height: height),
+        // Rect.fromLTWH(0.0, halfHeight, halfWidth, halfHeight),
+        // Bottom right
+        // Rect.fromLTWH(halfWidth, halfHeight, halfWidth, halfHeight),
+        Rect.fromCenter(center: Offset((halfWidth+halfWidth/2), (halfHeight+halfHeight/2)), width: height, height: height),
+      ];
+    });
   }
 
   Future<void> fetchData() async{
@@ -184,111 +293,125 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Critical Path Use Cases',
+          'Work Orders',
           style: TextStyle(
             // fontWeight: FontWeight.bold,
           ),
         ),
         // backgroundColor: Colors.blueGrey[50],
       ),
-      body: Container(
-        color: Colors.white,
-        width: MediaQuery.of(context).size.width, // Specify the width of the zoomable area
-        height: MediaQuery.of(context).size.height -
-            AppBar().preferredSize.height -
-            MediaQuery.of(context).padding.top, // Specify the height of the zoomable area
-        child: Container(
-          alignment: Alignment.center,
-          child: Stack(
-            children: [
-              // Background Image
-              Center(
-                child: Container(
-                  alignment: Alignment.center,
-                  child: AspectRatio(
-                    key: _imageKey,
-                    aspectRatio: 147 / 400,
-                    child: Stack(
-                      children: [
-                        Image.asset(
-                          'assets/images/ship5.jpg',
-                          fit: BoxFit.contain,
-                        ),
-                        GestureDetector(
-                          onTapDown: (details) {
-                            Offset tapPosition = details.localPosition;
-                            handleTap(tapPosition);
-                          },
-                            child: CustomPaint(
-                              painter: selectedFilter == 'Status'
-                                  ? RectanglePainter(
-                                rects,
-                                colors,
-                                workTasks,
-                                _maximumZoomReached,
-                                tickedStatuses,
-                                context,
-                              )
-                                  : RectanglePainterDate(
-                                rects,
-                                colors,
-                                workTasks,
-                                _maximumZoomReached,
-                                tickedStatuses,
-                                context,
-                              ),
-                              child: Container(),
-                            ),
-                        ),
-                      ],
-                    ),
-                  ),
+      body: FutureBuilder(
+        future: workOrderListFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: Colors.blue,
                 ),
-              ),
-              Positioned(
-                top: 25,
-                left: MediaQuery.of(context).size.width * 0.03,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              );
+            } else{
+            return Container(
+              color: Colors.white,
+              width: MediaQuery.of(context).size.width, // Specify the width of the zoomable area
+              height: MediaQuery.of(context).size.height -
+                  AppBar().preferredSize.height -
+                  MediaQuery.of(context).padding.top, // Specify the height of the zoomable area
+              child: Container(
+                alignment: Alignment.center,
+                child: Stack(
                   children: [
-                    DropdownButton<String>(
-                      value: selectedFilter,
-                      items: <String>['Status', 'Date'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedFilter = newValue!;
-                        });
-                      },
-                      style: TextStyle(color: Colors.blueAccent, fontSize: 16),
-                      icon: Icon(Icons.arrow_drop_down, color: Colors.blueAccent),
-                      dropdownColor: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      underline: Container(
-                        height: 2,
-                        color: Colors.blueAccent,
+                    // Background Image
+                    Center(
+                      child: Container(
+                        alignment: Alignment.center,
+                        child: AspectRatio(
+                          key: _imageKey,
+                          aspectRatio: 147 / 400,
+                          child: Stack(
+                            children: [
+                              Image.asset(
+                                'assets/images/ship5.jpg',
+                                fit: BoxFit.contain,
+                              ),
+                              GestureDetector(
+                                onTapDown: (details) {
+                                  Offset tapPosition = details.localPosition;
+                                  handleTap(tapPosition);
+                                },
+                                child: CustomPaint(
+                                  painter: selectedFilter == 'Status'
+                                      ? RectanglePainter(
+                                    rects,
+                                    colors,
+                                    workTasks,
+                                    _maximumZoomReached,
+                                    tickedStatuses,
+                                    workOrders,
+                                    context,
+                                  )
+                                      : RectanglePainterDate(
+                                    rects,
+                                    colors,
+                                    workTasks,
+                                    _maximumZoomReached,
+                                    tickedStatuses,
+                                    context,
+                                  ),
+                                  child: Container(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    ...legendItems[selectedFilter]!.map((item) => LegendItem(
-                      status: item.status,
-                      color: item.color,
-                      onChanged: (value) {
-                        setState(() {
-                          tickedStatuses[legendItems[selectedFilter]!.indexOf(item)] = value;
-                        });
-                      },
-                    )).toList(),
+                    Positioned(
+                      top: 25,
+                      left: MediaQuery.of(context).size.width * 0.03,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DropdownButton<String>(
+                            value: selectedFilter,
+                            items: <String>['Status', 'Date'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedFilter = newValue!;
+                              });
+                            },
+                            style: TextStyle(color: Colors.blueAccent, fontSize: 16),
+                            icon: Icon(Icons.arrow_drop_down, color: Colors.blueAccent),
+                            dropdownColor: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            underline: Container(
+                              height: 2,
+                              color: Colors.blueAccent,
+                            ),
+                          ),
+                          ...legendItems[selectedFilter]!.map((item) => LegendItem(
+                            status: item.status,
+                            color: item.color,
+                            onChanged: (value) {
+                              setState(() {
+                                tickedStatuses[legendItems[selectedFilter]!.indexOf(item)] = value;
+                              });
+                            },
+                          )).toList(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
+                // )
               ),
-            ],
-          ),
-          // )
-        ),
+            );
+          }
+        }
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
     );
@@ -314,18 +437,29 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     final double screenWidth = MediaQuery.of(context).size.width;
     final double popupWidth = screenWidth * 0.6;
     final double popupHeight = screenWidth * 1;
-    int workStationId = rectIndex + 1;
+    String urlWorkOrder = "https://ifscloud.tsunamit.com/main/ifsapplications/projection/v1/PrepareWorkOrderHandling.svc/ActiveSeparateSet(WoNo=385)/WorkTaskeArray";
+    // int workStationId = rectIndex + 1;
 
-    List<WorkTask> getFilteredTasks(String status) {
-      return workTasks
-          .where((task) =>
-      task.status == status && task.workStaId == rectIndex + 1)
+    // List<WorkTask> getFilteredTasks(String status) {
+    //   return workTasks
+    //       .where((task) =>
+    //   task.status == status && task.workStaId == rectIndex + 1)
+    //       .toList();
+    // }
+    // Get the corresponding rectangle by index and extract its ID (workTypeId)
+    String workTypeId = workTypeIds[rectIndex];
+    print("work type Id : $workTypeId");
+
+    List<dynamic> getFilteredOrders(List<String> statuses) {
+      return workOrders
+          .where((order) => statuses.contains(order['Objstate']) && order['WorkTypeId'] == workTypeId)
           .toList();
     }
 
-    List<WorkTask> criticalPathTasks = getFilteredTasks('Assigned');
-    List<WorkTask> laborCapacityTasks = getFilteredTasks('Ongoing');
-    List<WorkTask> safetyIssuesTasks = getFilteredTasks('Completed');
+    // Get counts for each category based on objState
+    List<dynamic> requestedWorkOrders = getFilteredOrders(['WORKREQUEST','OBSERVED']);
+    List<dynamic> ongoingWorkOrders = getFilteredOrders(['UNDERPREPARATION','PREPARED','RELEASED']);
+    List<dynamic> safetyIssuesTasks = getFilteredOrders(['STARTED','WORKDONE','REPORTED']);
 
     showDialog(
       context: context,
@@ -336,19 +470,19 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
               setState(() {
                 if (task.status != newStatus) {
                   if (task.status == 'Assigned') {
-                    criticalPathTasks.remove(task);
+                    requestedWorkOrders.remove(task);
                   } else if (task.status == 'Ongoing') {
-                    laborCapacityTasks.remove(task);
+                    ongoingWorkOrders.remove(task);
                   } else if (task.status == 'Completed') {
                     safetyIssuesTasks.remove(task);
                   }
                   task.status = newStatus;
                   if (newStatus == 'Ongoing') {
-                    laborCapacityTasks.add(task);
+                    ongoingWorkOrders.add(task);
                   } else if (newStatus == 'Completed') {
                     safetyIssuesTasks.add(task);
                   } else {
-                    criticalPathTasks.add(task);
+                    requestedWorkOrders.add(task);
                   }
                 }
               });
@@ -374,7 +508,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                         children: [
                           Center(
                             child: Text(
-                              'Work Station : $workStationId',
+                              'Work Station : $workTypeId',
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20.0,
@@ -393,18 +527,19 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                       child: Column(
                         children: [
                           Text(
-                            'Critical Path Mtrl',
+                            'Requested Work Orders',
                             style: TextStyle(
                                 fontSize: 16.0, fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                           Expanded(
-                            child: criticalPathTasks.isNotEmpty
+                            child: requestedWorkOrders.isNotEmpty
                                 ? Swiper(
-                              itemCount: criticalPathTasks.length,
+                              itemCount: requestedWorkOrders.length,
                               itemBuilder:
                                   (BuildContext context, int index) {
-                                WorkTask task = criticalPathTasks[index];
+                                var workOrder = requestedWorkOrders[index];
+                                Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20${workOrder['WoNo']}");
                                 return Card(
                                   color: AppColors.red,
                                   child: Padding(
@@ -416,7 +551,8 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text('WO No: ${task.WoNo.toString()}'),
+                                            // Text('WO No: ${workOrder.WoNo.toString()}'),
+                                            Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
                                                 launchUrl(_url);
@@ -427,36 +563,36 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         ),
                                         // Text(
                                         //     'WO No: ${task.WoNo.toString()}'),
-                                        Text('Description: ${task.description}'),
-                                        Text('Start Date: ${task.startDate}'),
+                                        Text('Description: ${workOrder['ErrDescr']}'),
+                                        // Text('Start Date: ${workOrder.startDate}'),
                                         SizedBox(
                                           height: 10,
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceEvenly,
-                                          children: [
-                                            buildStyledButton(
-                                              label: 'Labor',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Ongoing');
-                                              },
-                                              color: AppColors.yellow,
-                                            ),
-                                            buildStyledButton(
-                                              label: 'Safety',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Completed');
-                                              },
-                                              color: AppColors.green,
-                                            ),
-                                          ],
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment:
+                                        //   MainAxisAlignment
+                                        //       .spaceEvenly,
+                                        //   children: [
+                                        //     buildStyledButton(
+                                        //       label: 'Labor',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Ongoing');
+                                        //       },
+                                        //       color: AppColors.yellow,
+                                        //     ),
+                                        //     buildStyledButton(
+                                        //       label: 'Safety',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Completed');
+                                        //       },
+                                        //       color: AppColors.green,
+                                        //     ),
+                                        //   ],
+                                        // ),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -488,18 +624,19 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                       child: Column(
                         children: [
                           Text(
-                            'Labor Capacity',
+                            'Preperation Work Oders',
                             style: TextStyle(
                                 fontSize: 16.0, fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                           Expanded(
-                            child: laborCapacityTasks.isNotEmpty
+                            child: ongoingWorkOrders.isNotEmpty
                                 ? Swiper(
-                              itemCount: laborCapacityTasks.length,
+                              itemCount: ongoingWorkOrders.length,
                               itemBuilder:
                                   (BuildContext context, int index) {
-                                WorkTask task = laborCapacityTasks[index];
+                                    var workOrder = ongoingWorkOrders[index];
+                                    Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20${workOrder['WoNo']}");
                                 return Card(
                                   color: AppColors.yellow,
                                   child: Padding(
@@ -513,7 +650,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text('WO No: ${task.WoNo.toString()}'),
+                                            Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
                                                 launchUrl(_url);
@@ -522,36 +659,36 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                             ),
                                           ],
                                         ),
-                                        Text('Description: ${task.description}'),
-                                        Text('Start Date: ${task.startDate}'),
+                                        Text('Description: ${workOrder['ErrDescr']}'),
+                                        // Text('Start Date: ${task.startDate}'),
                                         SizedBox(
                                           height: 10,
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceEvenly,
-                                          children: [
-                                            buildStyledButton(
-                                              label: 'Critical',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Assigned');
-                                              },
-                                              color: AppColors.red,
-                                            ),
-                                            buildStyledButton(
-                                              label: 'Safety',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Completed');
-                                              },
-                                              color: AppColors.green,
-                                            ),
-                                          ],
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment:
+                                        //   MainAxisAlignment
+                                        //       .spaceEvenly,
+                                        //   children: [
+                                        //     buildStyledButton(
+                                        //       label: 'Critical',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Assigned');
+                                        //       },
+                                        //       color: AppColors.red,
+                                        //     ),
+                                        //     buildStyledButton(
+                                        //       label: 'Safety',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Completed');
+                                        //       },
+                                        //       color: AppColors.green,
+                                        //     ),
+                                        //   ],
+                                        // ),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -583,7 +720,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                       child: Column(
                         children: [
                           Text(
-                            'Safety Issues',
+                            'Ongoing Work Orders',
                             style: TextStyle(
                                 fontSize: 16.0, fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
@@ -594,7 +731,8 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                               itemCount: safetyIssuesTasks.length,
                               itemBuilder:
                                   (BuildContext context, int index) {
-                                WorkTask task = safetyIssuesTasks[index];
+                                var workOrder = safetyIssuesTasks[index];
+                                Uri _url = Uri.parse("https://ifscloud.tsunamit.com/main/ifsapplications/web/page/PrepareWorkOrder/Form;%24filter=WoNo%20eq%20${workOrder['WoNo']}");
                                 return Card(
                                   color: AppColors.green,
                                   child: Padding(
@@ -608,7 +746,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text('WO No: ${task.WoNo.toString()}'),
+                                            Text('WO No: ${workOrder['WoNo']}'),
                                             GestureDetector(
                                               onTap: () {
                                                 launchUrl(_url);
@@ -617,36 +755,36 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                                             ),
                                           ],
                                         ),
-                                        Text('Description: ${task.description}'),
-                                        Text('Start Date: ${task.startDate}'),
+                                        Text('Description: ${workOrder['ErrDescr']}'),
+                                        // Text('Start Date: ${task.startDate}'),
                                         SizedBox(
                                           height: 10,
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceEvenly,
-                                          children: [
-                                            buildStyledButton(
-                                              label: 'Critical',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Assigned');
-                                              },
-                                              color: AppColors.red,
-                                            ),
-                                            buildStyledButton(
-                                              label: 'Labor',
-                                              icon: Icons.check_circle,
-                                              onPressed: () {
-                                                updateTaskStatus(
-                                                    task, 'Ongoing');
-                                              },
-                                              color: AppColors.yellow,
-                                            ),
-                                          ],
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment:
+                                        //   MainAxisAlignment
+                                        //       .spaceEvenly,
+                                        //   children: [
+                                        //     buildStyledButton(
+                                        //       label: 'Critical',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Assigned');
+                                        //       },
+                                        //       color: AppColors.red,
+                                        //     ),
+                                        //     buildStyledButton(
+                                        //       label: 'Labor',
+                                        //       icon: Icons.check_circle,
+                                        //       onPressed: () {
+                                        //         updateTaskStatus(
+                                        //             task, 'Ongoing');
+                                        //       },
+                                        //       color: AppColors.yellow,
+                                        //     ),
+                                        //   ],
+                                        // ),
                                         SizedBox(
                                           height: 10,
                                         ),
@@ -979,8 +1117,9 @@ class RectanglePainter extends CustomPainter {
   final bool maximumZoomReached;
   final BuildContext context;
   final List<bool> tickedStatuses;
+  final List<dynamic> workOrders;
 
-  RectanglePainter(this.rects, this.colors, this.workTasks, this.maximumZoomReached, this.tickedStatuses,this.context);
+  RectanglePainter(this.rects, this.colors, this.workTasks, this.maximumZoomReached, this.tickedStatuses,this.workOrders,this.context);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1003,35 +1142,49 @@ class RectanglePainter extends CustomPainter {
 
       if (maximumZoomReached) {
         // Initialize counters for different task statuses
-        int assignedCount = 0;
-        int ongoingCount = 0;
-        int completedCount = 0;
+        // int assignedCount = 0;
+        // int ongoingCount = 0;
+        // int completedCount = 0;
+        //
+        // // Count tasks with different statuses for the current rectangle
+        // for (var task in workTasks) {
+        //   if (task.workStaId == i + 1) {
+        //     if (task.status == 'Assigned') {
+        //       assignedCount++;
+        //     } else if (task.status == 'Ongoing') {
+        //       ongoingCount++;
+        //     } else if (task.status == 'Completed') {
+        //       completedCount++;
+        //     }
+        //   }
+        // }
 
-        // Count tasks with different statuses for the current rectangle
-        for (var task in workTasks) {
-          if (task.workStaId == i + 1) {
-            if (task.status == 'Assigned') {
-              assignedCount++;
-            } else if (task.status == 'Ongoing') {
-              ongoingCount++;
-            } else if (task.status == 'Completed') {
-              completedCount++;
-            }
-          }
+        String workTypeId;
+        if (i == 0) {
+          workTypeId = 'I2S-100'; // Top-left
+        } else if (i == 1) {
+          workTypeId = 'I2S-110'; // Top-right
+        } else if (i == 2) {
+          workTypeId = 'I2S-120'; // Bottom-left
+        } else {
+          workTypeId = 'I2S-130'; // Bottom-right
         }
 
-        // Draw text showing the count of work tasks with different statuses in the middle of the rectangle
-        // TextPainter painter = TextPainter(
-        //   text: TextSpan(
-        //     text: 'Assigned: $assignedCount\nOngoing: $ongoingCount\nCompleted: $completedCount',
-        //     style: TextStyle(color: Colors.white, fontSize: 11.0),
-        //   ),
-        //   textAlign: TextAlign.center,
-        //   textDirection: TextDirection.ltr,
-        // );
-        String assignedLabel = tickedStatuses[0] ? 'Critical Path Mtrl: $assignedCount\n\n' : '';
-        String ongoingLabel = tickedStatuses[1] ? 'Labor capacity: $ongoingCount\n\n' : '';
-        String completedLabel = tickedStatuses[2] ? 'Safety issues: $completedCount\n\n' : '';
+        int workRequestedCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['Objstate'] == 'WORKREQUEST' || wo['Objstate'] == 'OBSERVED')).length;
+
+        int underPreparationCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['Objstate'] == 'UNDERPREPARATION' || wo['Objstate'] == 'PREPARED' || wo['Objstate'] == 'RELEASED')).length;
+
+        int startedCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['Objstate'] == 'STARTED' || wo['Objstate'] == 'WORKDONE' || wo['Objstate'] == 'REPORTED')).length;
+
+        String assignedLabel = tickedStatuses[0] ? 'Critical Path Mtrl: $workRequestedCount\n\n' : '';
+        String ongoingLabel = tickedStatuses[1] ? 'Labor capacity: $underPreparationCount\n\n' : '';
+        String completedLabel = tickedStatuses[2] ? 'Safety issues: $startedCount\n\n' : '';
 
         TextPainter painter = TextPainter(
           text: TextSpan(
@@ -1048,22 +1201,46 @@ class RectanglePainter extends CustomPainter {
         );
       }else {
         // Initialize counters for different task statuses
-        int assignedCount = 0;
-        int ongoingCount = 0;
-        int completedCount = 0;
+        // int assignedCount = 0;
+        // int ongoingCount = 0;
+        // int completedCount = 0;
+        //
+        // // Count tasks with different statuses for the current rectangle
+        // for (var task in workTasks) {
+        //   if (task.workStaId == i + 1) {
+        //     if (task.status == 'Assigned') {
+        //       assignedCount++;
+        //     } else if (task.status == 'Ongoing') {
+        //       ongoingCount++;
+        //     } else if (task.status == 'Completed') {
+        //       completedCount++;
+        //     }
+        //   }
+        // }
 
-        // Count tasks with different statuses for the current rectangle
-        for (var task in workTasks) {
-          if (task.workStaId == i + 1) {
-            if (task.status == 'Assigned') {
-              assignedCount++;
-            } else if (task.status == 'Ongoing') {
-              ongoingCount++;
-            } else if (task.status == 'Completed') {
-              completedCount++;
-            }
-          }
+
+        String workTypeId;
+        if (i == 0) {
+          workTypeId = 'I2S-100'; // Top-left
+        } else if (i == 1) {
+          workTypeId = 'I2S-110'; // Top-right
+        } else if (i == 2) {
+          workTypeId = 'I2S-120'; // Bottom-left
+        } else {
+          workTypeId = 'I2S-130'; // Bottom-right
         }
+
+        int workRequestedCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['Objstate'] == 'WORKREQUEST' || wo['Objstate'] == 'OBSERVED')).length;
+
+        int underPreparationCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['Objstate'] == 'UNDERPREPARATION' || wo['Objstate'] == 'PREPARED' || wo['Objstate'] == 'RELEASED')).length;
+
+        int startedCount = workOrders.where((wo) =>
+        wo['WorkTypeId'] == workTypeId &&
+            (wo['Objstate'] == 'STARTED' || wo['Objstate'] == 'WORKDONE' || wo['Objstate'] == 'REPORTED')).length;
 
         // Draw circles showing the count of work tasks with different statuses in the middle of the rectangle
         // double circleRadius = 15.0;
@@ -1088,7 +1265,7 @@ class RectanglePainter extends CustomPainter {
           );
           TextPainter assignedPainter = TextPainter(
             text: TextSpan(
-              text: assignedCount.toString(),
+              text: workRequestedCount.toString(),
               style: TextStyle(color: Colors.black, fontSize: 12.0, fontWeight: FontWeight.bold),
             ),
             textAlign: TextAlign.center,
@@ -1112,7 +1289,7 @@ class RectanglePainter extends CustomPainter {
           );
           TextPainter ongoingPainter = TextPainter(
             text: TextSpan(
-              text: ongoingCount.toString(),
+              text: underPreparationCount.toString(),
               style: TextStyle(color: Colors.black, fontSize: 12.0, fontWeight: FontWeight.bold),
             ),
             textAlign: TextAlign.center,
@@ -1136,7 +1313,7 @@ class RectanglePainter extends CustomPainter {
           );
           TextPainter completedPainter = TextPainter(
             text: TextSpan(
-              text: completedCount.toString(),
+              text: startedCount.toString(),
               style: TextStyle(color: Colors.black, fontSize: 12.0, fontWeight: FontWeight.bold),
             ),
             textAlign: TextAlign.center,
