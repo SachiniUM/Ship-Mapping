@@ -21,23 +21,28 @@ export 'package:objectbox/objectbox.dart'; // so that callers only have to impor
 
 final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
-      id: const obx_int.IdUid(1, 3662180288174072473),
+      id: const obx_int.IdUid(1, 1163650179154083951),
       name: 'WorkStation',
-      lastPropertyId: const obx_int.IdUid(3, 867128048656895163),
+      lastPropertyId: const obx_int.IdUid(4, 2400061961181691010),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(1, 4022356865181846794),
-            name: 'workStationId',
+            id: const obx_int.IdUid(1, 2303018469580053647),
+            name: 'id',
             type: 6,
             flags: 129),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(2, 4197475232743843681),
+            id: const obx_int.IdUid(2, 5286223814925261784),
+            name: 'workStationId',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(3, 3872039968497747103),
             name: 'left',
             type: 8,
             flags: 0),
         obx_int.ModelProperty(
-            id: const obx_int.IdUid(3, 867128048656895163),
+            id: const obx_int.IdUid(4, 2400061961181691010),
             name: 'top',
             type: 8,
             flags: 0)
@@ -81,7 +86,7 @@ Future<obx.Store> openStore(
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
       entities: _entities,
-      lastEntityId: const obx_int.IdUid(1, 3662180288174072473),
+      lastEntityId: const obx_int.IdUid(1, 1163650179154083951),
       lastIndexId: const obx_int.IdUid(0, 0),
       lastRelationId: const obx_int.IdUid(0, 0),
       lastSequenceId: const obx_int.IdUid(0, 0),
@@ -98,28 +103,36 @@ obx_int.ModelDefinition getObjectBoxModel() {
         model: _entities[0],
         toOneRelations: (WorkStation object) => [],
         toManyRelations: (WorkStation object) => {},
-        getId: (WorkStation object) => object.workStationId,
+        getId: (WorkStation object) => object.id,
         setId: (WorkStation object, int id) {
-          object.workStationId = id;
+          object.id = id;
         },
         objectToFB: (WorkStation object, fb.Builder fbb) {
-          fbb.startTable(4);
-          fbb.addInt64(0, object.workStationId);
-          fbb.addFloat64(1, object.left);
-          fbb.addFloat64(2, object.top);
+          final workStationIdOffset = object.workStationId == null
+              ? null
+              : fbb.writeString(object.workStationId!);
+          fbb.startTable(5);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, workStationIdOffset);
+          fbb.addFloat64(2, object.left);
+          fbb.addFloat64(3, object.top);
           fbb.finish(fbb.endTable());
-          return object.workStationId;
+          return object.id;
         },
         objectFromFB: (obx.Store store, ByteData fbData) {
           final buffer = fb.BufferContext(fbData);
           final rootOffset = buffer.derefObject(0);
-          final workStationIdParam =
+          final idParam =
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+          final workStationIdParam =
+              const fb.StringReader(asciiOptimization: true)
+                  .vTableGetNullable(buffer, rootOffset, 6);
           final leftParam =
-              const fb.Float64Reader().vTableGet(buffer, rootOffset, 6, 0);
-          final topParam =
               const fb.Float64Reader().vTableGet(buffer, rootOffset, 8, 0);
+          final topParam =
+              const fb.Float64Reader().vTableGet(buffer, rootOffset, 10, 0);
           final object = WorkStation(
+              id: idParam,
               workStationId: workStationIdParam,
               left: leftParam,
               top: topParam);
@@ -133,15 +146,19 @@ obx_int.ModelDefinition getObjectBoxModel() {
 
 /// [WorkStation] entity fields to define ObjectBox queries.
 class WorkStation_ {
+  /// see [WorkStation.id]
+  static final id =
+      obx.QueryIntegerProperty<WorkStation>(_entities[0].properties[0]);
+
   /// see [WorkStation.workStationId]
   static final workStationId =
-      obx.QueryIntegerProperty<WorkStation>(_entities[0].properties[0]);
+      obx.QueryStringProperty<WorkStation>(_entities[0].properties[1]);
 
   /// see [WorkStation.left]
   static final left =
-      obx.QueryDoubleProperty<WorkStation>(_entities[0].properties[1]);
+      obx.QueryDoubleProperty<WorkStation>(_entities[0].properties[2]);
 
   /// see [WorkStation.top]
   static final top =
-      obx.QueryDoubleProperty<WorkStation>(_entities[0].properties[2]);
+      obx.QueryDoubleProperty<WorkStation>(_entities[0].properties[3]);
 }
