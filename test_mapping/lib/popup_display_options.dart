@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 import 'package:card_swiper/card_swiper.dart';
@@ -15,6 +16,7 @@ import 'entities/objectBoxStore.dart';
 import 'entities/workstation_positions.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:test_mapping/services/api_service.dart' as apiService;
+import 'package:image_picker/image_picker.dart';
 
 class PopupDisplayOptions extends StatefulWidget {
 
@@ -44,6 +46,12 @@ class WorkTask {
 //
 //   RectWithId({required this.rect, required this.id});
 // }
+Future<File?> getSavedImage() async {
+  final prefs = await SharedPreferences.getInstance();
+  String? imagePath = prefs.getString("saved_image");
+  return imagePath != null ? File(imagePath) : null;
+}
+
 
 class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsBindingObserver{
   final GlobalKey _imageKey = GlobalKey();
@@ -80,18 +88,22 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
       LegendItemData('Low Priority', Colors.green),
     ],
   };
+  File? _selectedImage;
+  File? savedImage;
 
   @override
   void initState() {
     super.initState();
+    _loadImage();
+    // Future.delayed(Duration.zero, () => _showImageUploadDialog());
     // initializeWorkTasks();
     ObjectBoxStore.initStore().then((_) {
-      // checkAndInsertInitialData().then((_) {
+      checkAndInsertInitialData().then((_) {
         fetchData().then((_) {
           // Fetch the work order list after the fetchData has completed
           workOrderListFuture = getWorkOrderList();
         });
-      // });
+      });
     });
 
     // WidgetsBinding.instance?.addObserver(this);
@@ -103,6 +115,13 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     // });
 
     // workOrderListFuture = getWorkOrderList();
+  }
+
+  Future<void> _loadImage() async {
+    File? image = await getSavedImage();
+    setState(() {
+      savedImage = image;
+    });
   }
 
 
@@ -168,30 +187,63 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
     }
   }
 
-  // Future<void> checkAndInsertInitialData() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   bool isFirstRun = prefs.getBool('isFirstRun') ?? true;
-  //
-  //   if (isFirstRun) {
-  //     // Insert your initial data into ObjectBox here
-  //     final store = ObjectBoxStore.instance;
-  //     final box = store.box<WorkStation>();
-  //
-  //     // Define your initial workstations
-  //     List<WorkStation> initialWorkStations = [
-  //       // WorkStation(workStationId: '1', left: 0.5, top: 0.1),
-  //       // WorkStation(workStationId: '2', left: 0.4, top: 0.3),
-  //       // WorkStation(workStationId: '3', left: 0.4, top: 0.6),
-  //       // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
-  //       // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
-  //     ];
-  //
-  //     await box.putMany(initialWorkStations);
-  //
-  //     // Set 'isFirstRun' to false so this block won't execute again
-  //     prefs.setBool('isFirstRun', false);
-  //   }
-  // }
+  Future<void> checkAndInsertInitialData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isFirstRun = prefs.getBool('isFirstRun') ?? true;
+
+    if (isFirstRun) {
+      // Insert your initial data into ObjectBox here
+      final store = ObjectBoxStore.instance;
+      final box = store.box<WorkStation>();
+
+      // Define your initial workstations
+      List<WorkStation> initialWorkStations = [
+        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.5, top: 0.1),
+        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.4, top: 0.3),
+        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.4, top: 0.6),
+        // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
+        // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
+      ];
+
+      await box.putMany(initialWorkStations);
+
+      // Set 'isFirstRun' to false so this block won't execute again
+      prefs.setBool('isFirstRun', false);
+    }
+  }
+
+  Future<void> _showImageUploadDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent user from dismissing without action
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Upload an Image'),
+          content: Text('Please select an image before proceeding.'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await _pickImage();
+                if (_selectedImage != null) {
+                  Navigator.of(context).pop(); // Close dialog after picking image
+                }
+              },
+              child: Text('Choose Image'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   void dispose(){
@@ -213,6 +265,10 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
       fetchData().then((_) {
         // Fetch the work order list after the fetchData has completed
         workOrderListFuture = getWorkOrderList();
+        // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   getSizeAndPosition();
+        // });
+        // getSizeAndPosition();
       });
     });
   }
@@ -336,6 +392,13 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
+    // if (_selectedImage == null) {
+    //   return Scaffold(
+    //     body: Center(
+    //       child: CircularProgressIndicator(),
+    //     ),
+    //   );
+    // }
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -372,12 +435,19 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                           alignment: Alignment.center,
                           child: AspectRatio(
                             key: _imageKey,
-                            aspectRatio: 147 / 400,
+                            aspectRatio: 1,
                             child: Stack(
                               children: [
-                                Image.asset(
-                                  'assets/images/ship5.jpg',
-                                  fit: BoxFit.contain,
+                                Center(
+                                  child: savedImage != null
+                                      ? Image.file(savedImage!, fit: BoxFit.contain)
+                                      : Image.asset("assets/images/factoryPlan.png",fit: BoxFit.contain,),
+                                  // child: Image.file(
+                                  //   // 'assets/images/ship5.jpg',
+                                  //   // 'assets/images/factoryPlan.png',
+                                  //   _selectedImage!,
+                                  //   fit: BoxFit.contain,
+                                  // ),
                                 ),
                                 GestureDetector(
                                   onTapDown: (details) {

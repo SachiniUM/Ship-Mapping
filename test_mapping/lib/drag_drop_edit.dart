@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_mapping/services/error_handling.dart';
 import 'package:zoom_widget/zoom_widget.dart';
 
@@ -20,6 +23,12 @@ class CustomPainterDraggableEdit extends StatefulWidget {
   _CustomPainterDraggableEditState createState() => _CustomPainterDraggableEditState();
 }
 
+Future<File?> getSavedImage() async {
+  final prefs = await SharedPreferences.getInstance();
+  String? imagePath = prefs.getString("saved_image");
+  return imagePath != null ? File(imagePath) : null;
+}
+
 class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit> with WidgetsBindingObserver {
   final GlobalKey _imageKey = GlobalKey();
   late Size imageSize = Size.zero;
@@ -35,17 +44,53 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
 
   List<String> workStationId = [];
   Future<void>? workStationListFuture;
+  File? savedImage;
 
   @override
   void initState() {
     super.initState();
+    _loadImage();
     ObjectBoxStore.initStore().then((_) {
-      fetchData();
+      checkAndInsertInitialData().then((_) {
+        fetchData();
+      });
     });
     WidgetsBinding.instance?.addObserver(this);
     WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
 
     workStationListFuture = getWorkStationIds();
+  }
+
+  Future<void> _loadImage() async {
+    File? image = await getSavedImage();
+    setState(() {
+      savedImage = image;
+    });
+  }
+
+  Future<void> checkAndInsertInitialData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isFirstRun = prefs.getBool('isFirstRun') ?? true;
+
+    if (isFirstRun) {
+      // Insert your initial data into ObjectBox here
+      final store = ObjectBoxStore.instance;
+      final box = store.box<WorkStation>();
+
+      // Define your initial workstations
+      List<WorkStation> initialWorkStations = [
+        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.5, top: 0.1),
+        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.4, top: 0.3),
+        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.4, top: 0.6),
+        // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
+        // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
+      ];
+
+      await box.putMany(initialWorkStations);
+
+      // Set 'isFirstRun' to false so this block won't execute again
+      prefs.setBool('isFirstRun', false);
+    }
   }
 
   @override
@@ -182,10 +227,16 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
                         alignment: Alignment.center,
                         child: AspectRatio(
                           key: _imageKey,
-                          aspectRatio: 147 / 400,
+                          aspectRatio: 1,
                           child: Stack(
                             children: [
-                              Image.asset('assets/images/ship5.jpg', fit: BoxFit.contain),
+                              // Image.asset('assets/images/ship5.jpg', fit: BoxFit.contain),
+                              Center(
+                                child: savedImage != null
+                                    ? Image.file(savedImage!, fit: BoxFit.contain)
+                                    : Image.asset("assets/images/factoryPlan.png",fit: BoxFit.contain,),
+                                // child: Image.asset('assets/images/factoryPlan.png', fit: BoxFit.contain),
+                              ),
                               GestureDetector(
                                 onPanStart: (details) {
                                   _checkDragStart(details.localPosition);

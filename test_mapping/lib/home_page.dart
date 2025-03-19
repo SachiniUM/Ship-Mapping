@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'adminPages/configurations.dart';
+import 'common/custom_button.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -8,13 +11,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +18,30 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("Image Mapping"),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text('Settings'),
+            ),
+            ListTile(
+              title: const Text('Configure'),
+              onTap: () {
+                Navigator.pushNamed(context, "/configurations");
+              },
+            ),
+            ListTile(
+              title: const Text('Item 2'),
+              onTap: () {
+                // Update the state of the app.
+                // ...
+              },
+            ),
+          ],
+        ),
       ),
       body: const Center(
         child: Column(
@@ -50,33 +70,3 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class CustomButton extends StatelessWidget {
-  final String text;
-  final String routeName;
-
-  const CustomButton({
-    Key? key,
-    required this.text,
-    required this.routeName,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        Navigator.pushNamed(context, routeName);
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 16, color: Colors.white),
-      ),
-    );
-  }
-}

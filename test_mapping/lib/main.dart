@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:test_mapping/adminPages/change_drawing.dart';
+import 'package:test_mapping/adminPages/configurations.dart';
 import 'package:test_mapping/config/user_data.dart';
 import 'package:test_mapping/coordinates.dart';
 import 'package:test_mapping/drag_drop_edit.dart';
@@ -88,6 +90,14 @@ class _ShipMappingState extends State<ShipMapping> {
           refreshTokenFunction: refreshTokenFunction,
         ),
         '/homePage': (context) => HomePage(),
+        '/configurations': (context) => ConfigurationPage(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
+        '/changeDrawing': (context) => ChangeDrawing(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
 
       },
     );
