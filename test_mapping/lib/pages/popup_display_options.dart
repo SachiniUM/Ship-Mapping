@@ -11,9 +11,9 @@ import 'package:test_mapping/config/user_data.dart';
 import 'package:test_mapping/constants.dart';
 import 'package:test_mapping/services/error_handling.dart';
 
-import 'common/logout_popup.dart';
-import 'entities/objectBoxStore.dart';
-import 'entities/workstation_positions.dart';
+import '../common/logout_popup.dart';
+import '../entities/objectBoxStore.dart';
+import '../entities/workstation_positions.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:test_mapping/services/api_service.dart' as apiService;
 import 'package:image_picker/image_picker.dart';
@@ -198,9 +198,9 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
 
       // Define your initial workstations
       List<WorkStation> initialWorkStations = [
-        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.5, top: 0.1),
-        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.4, top: 0.3),
-        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.4, top: 0.6),
+        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.65, top: 0.62),
+        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.69, top: 0.41),
+        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.3, top: 0.78),
         // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
         // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
       ];
@@ -435,13 +435,13 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
                           alignment: Alignment.center,
                           child: AspectRatio(
                             key: _imageKey,
-                            aspectRatio: 1,
+                            aspectRatio: 1.2,
                             child: Stack(
                               children: [
                                 Center(
                                   child: savedImage != null
                                       ? Image.file(savedImage!, fit: BoxFit.contain)
-                                      : Image.asset("assets/images/factoryPlan.png",fit: BoxFit.contain,),
+                                      : Image.asset("assets/images/siteStructure.png",fit: BoxFit.contain,),
                                   // child: Image.file(
                                   //   // 'assets/images/ship5.jpg',
                                   //   // 'assets/images/factoryPlan.png',

@@ -8,10 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_mapping/services/error_handling.dart';
 import 'package:zoom_widget/zoom_widget.dart';
 
-import 'common/logout_popup.dart';
-import 'config/user_data.dart';
-import 'entities/objectBoxStore.dart';
-import 'entities/workstation_positions.dart';
+import '../common/logout_popup.dart';
+import '../config/user_data.dart';
+import '../entities/objectBoxStore.dart';
+import '../entities/workstation_positions.dart';
 import 'package:test_mapping/services/api_service.dart' as apiService;
 
 class CustomPainterDraggableEdit extends StatefulWidget {
@@ -79,9 +79,9 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
 
       // Define your initial workstations
       List<WorkStation> initialWorkStations = [
-        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.5, top: 0.1),
-        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.4, top: 0.3),
-        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.4, top: 0.6),
+        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.65, top: 0.62),
+        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.69, top: 0.41),
+        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.3, top: 0.78),
         // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
         // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
       ];
@@ -109,6 +109,27 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
         fetchData();
       });
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    print('inside did change');
+    super.didChangeDependencies();
+    // Call fetchData when the dependencies of the widget change,
+    // which means the widget is being displayed or resumed.
+    // fetchData();
+    // WidgetsBinding.instance?.addPostFrameCallback((_) => getSizeAndPosition());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchData().then((_) {
+        // Fetch the work order list after the fetchData has completed
+        getSizeAndPosition();
+        // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   getSizeAndPosition();
+        // });
+        // getSizeAndPosition();
+      });
+    });
   }
 
   Future<void> fetchData() async {
@@ -227,14 +248,14 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
                         alignment: Alignment.center,
                         child: AspectRatio(
                           key: _imageKey,
-                          aspectRatio: 1,
+                          aspectRatio: 1.2,
                           child: Stack(
                             children: [
                               // Image.asset('assets/images/ship5.jpg', fit: BoxFit.contain),
                               Center(
                                 child: savedImage != null
                                     ? Image.file(savedImage!, fit: BoxFit.contain)
-                                    : Image.asset("assets/images/factoryPlan.png",fit: BoxFit.contain,),
+                                    : Image.asset("assets/images/siteStructure.png",fit: BoxFit.contain,),
                                 // child: Image.asset('assets/images/factoryPlan.png', fit: BoxFit.contain),
                               ),
                               GestureDetector(
