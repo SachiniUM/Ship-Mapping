@@ -15,6 +15,7 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
+import 'entities/custom_workstations.dart';
 import 'entities/workstation_positions.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
@@ -23,7 +24,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
       id: const obx_int.IdUid(1, 1163650179154083951),
       name: 'WorkStation',
-      lastPropertyId: const obx_int.IdUid(4, 2400061961181691010),
+      lastPropertyId: const obx_int.IdUid(6, 8620826117761092948),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
@@ -43,6 +44,60 @@ final _entities = <obx_int.ModelEntity>[
             flags: 0),
         obx_int.ModelProperty(
             id: const obx_int.IdUid(4, 2400061961181691010),
+            name: 'top',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(5, 1240759268826325653),
+            name: 'category',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(6, 8620826117761092948),
+            name: 'filter',
+            type: 9,
+            flags: 0)
+      ],
+      relations: <obx_int.ModelRelation>[],
+      backlinks: <obx_int.ModelBacklink>[]),
+  obx_int.ModelEntity(
+      id: const obx_int.IdUid(2, 1684346824670955740),
+      name: 'CustomWorkStation',
+      lastPropertyId: const obx_int.IdUid(7, 3019103563608802187),
+      flags: 0,
+      properties: <obx_int.ModelProperty>[
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(1, 187070858540335802),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(2, 3424080934583467209),
+            name: 'name',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(3, 3540744041451946431),
+            name: 'imagePath',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(4, 3883334057817626677),
+            name: 'type',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(5, 3015291079867613970),
+            name: 'status',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(6, 4310031686035310859),
+            name: 'left',
+            type: 8,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(7, 3019103563608802187),
             name: 'top',
             type: 8,
             flags: 0)
@@ -86,7 +141,7 @@ Future<obx.Store> openStore(
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
       entities: _entities,
-      lastEntityId: const obx_int.IdUid(1, 1163650179154083951),
+      lastEntityId: const obx_int.IdUid(2, 1684346824670955740),
       lastIndexId: const obx_int.IdUid(0, 0),
       lastRelationId: const obx_int.IdUid(0, 0),
       lastSequenceId: const obx_int.IdUid(0, 0),
@@ -111,11 +166,15 @@ obx_int.ModelDefinition getObjectBoxModel() {
           final workStationIdOffset = object.workStationId == null
               ? null
               : fbb.writeString(object.workStationId!);
-          fbb.startTable(5);
+          final categoryOffset = fbb.writeString(object.category);
+          final filterOffset = fbb.writeString(object.filter);
+          fbb.startTable(7);
           fbb.addInt64(0, object.id);
           fbb.addOffset(1, workStationIdOffset);
           fbb.addFloat64(2, object.left);
           fbb.addFloat64(3, object.top);
+          fbb.addOffset(4, categoryOffset);
+          fbb.addOffset(5, filterOffset);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -131,9 +190,67 @@ obx_int.ModelDefinition getObjectBoxModel() {
               const fb.Float64Reader().vTableGet(buffer, rootOffset, 8, 0);
           final topParam =
               const fb.Float64Reader().vTableGet(buffer, rootOffset, 10, 0);
+          final categoryParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 12, '');
+          final filterParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 14, '');
           final object = WorkStation(
               id: idParam,
               workStationId: workStationIdParam,
+              left: leftParam,
+              top: topParam,
+              category: categoryParam,
+              filter: filterParam);
+
+          return object;
+        }),
+    CustomWorkStation: obx_int.EntityDefinition<CustomWorkStation>(
+        model: _entities[1],
+        toOneRelations: (CustomWorkStation object) => [],
+        toManyRelations: (CustomWorkStation object) => {},
+        getId: (CustomWorkStation object) => object.id,
+        setId: (CustomWorkStation object, int id) {
+          object.id = id;
+        },
+        objectToFB: (CustomWorkStation object, fb.Builder fbb) {
+          final nameOffset = fbb.writeString(object.name);
+          final imagePathOffset = fbb.writeString(object.imagePath);
+          final typeOffset = fbb.writeString(object.type);
+          final statusOffset = fbb.writeString(object.status);
+          fbb.startTable(8);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, nameOffset);
+          fbb.addOffset(2, imagePathOffset);
+          fbb.addOffset(3, typeOffset);
+          fbb.addOffset(4, statusOffset);
+          fbb.addFloat64(5, object.left);
+          fbb.addFloat64(6, object.top);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (obx.Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+          final idParam =
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+          final nameParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 6, '');
+          final imagePathParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 8, '');
+          final typeParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 10, '');
+          final statusParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 12, '');
+          final leftParam =
+              const fb.Float64Reader().vTableGet(buffer, rootOffset, 14, 0);
+          final topParam =
+              const fb.Float64Reader().vTableGet(buffer, rootOffset, 16, 0);
+          final object = CustomWorkStation(
+              id: idParam,
+              name: nameParam,
+              imagePath: imagePathParam,
+              type: typeParam,
+              status: statusParam,
               left: leftParam,
               top: topParam);
 
@@ -161,4 +278,43 @@ class WorkStation_ {
   /// see [WorkStation.top]
   static final top =
       obx.QueryDoubleProperty<WorkStation>(_entities[0].properties[3]);
+
+  /// see [WorkStation.category]
+  static final category =
+      obx.QueryStringProperty<WorkStation>(_entities[0].properties[4]);
+
+  /// see [WorkStation.filter]
+  static final filter =
+      obx.QueryStringProperty<WorkStation>(_entities[0].properties[5]);
+}
+
+/// [CustomWorkStation] entity fields to define ObjectBox queries.
+class CustomWorkStation_ {
+  /// see [CustomWorkStation.id]
+  static final id =
+      obx.QueryIntegerProperty<CustomWorkStation>(_entities[1].properties[0]);
+
+  /// see [CustomWorkStation.name]
+  static final name =
+      obx.QueryStringProperty<CustomWorkStation>(_entities[1].properties[1]);
+
+  /// see [CustomWorkStation.imagePath]
+  static final imagePath =
+      obx.QueryStringProperty<CustomWorkStation>(_entities[1].properties[2]);
+
+  /// see [CustomWorkStation.type]
+  static final type =
+      obx.QueryStringProperty<CustomWorkStation>(_entities[1].properties[3]);
+
+  /// see [CustomWorkStation.status]
+  static final status =
+      obx.QueryStringProperty<CustomWorkStation>(_entities[1].properties[4]);
+
+  /// see [CustomWorkStation.left]
+  static final left =
+      obx.QueryDoubleProperty<CustomWorkStation>(_entities[1].properties[5]);
+
+  /// see [CustomWorkStation.top]
+  static final top =
+      obx.QueryDoubleProperty<CustomWorkStation>(_entities[1].properties[6]);
 }

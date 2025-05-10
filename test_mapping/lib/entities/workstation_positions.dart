@@ -4,7 +4,10 @@ import 'package:objectbox/objectbox.dart';
 class WorkStation {
   @Id(assignable: true)
   int id;
+
   String? workStationId;
+  String category;
+  String filter;
   double left;
   double top;
 
@@ -13,5 +16,7 @@ class WorkStation {
     this.workStationId,
     required this.left,
     required this.top,
+    required this.category,
+    required this.filter,
   });
 }

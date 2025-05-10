@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:1163650179154083951",
-      "lastPropertyId": "4:2400061961181691010",
+      "lastPropertyId": "6:8620826117761092948",
       "name": "WorkStation",
       "properties": [
         {
@@ -28,12 +28,66 @@
           "id": "4:2400061961181691010",
           "name": "top",
           "type": 8
+        },
+        {
+          "id": "5:1240759268826325653",
+          "name": "category",
+          "type": 9
+        },
+        {
+          "id": "6:8620826117761092948",
+          "name": "filter",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:1684346824670955740",
+      "lastPropertyId": "7:3019103563608802187",
+      "name": "CustomWorkStation",
+      "properties": [
+        {
+          "id": "1:187070858540335802",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3424080934583467209",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "3:3540744041451946431",
+          "name": "imagePath",
+          "type": 9
+        },
+        {
+          "id": "4:3883334057817626677",
+          "name": "type",
+          "type": 9
+        },
+        {
+          "id": "5:3015291079867613970",
+          "name": "status",
+          "type": 9
+        },
+        {
+          "id": "6:4310031686035310859",
+          "name": "left",
+          "type": 8
+        },
+        {
+          "id": "7:3019103563608802187",
+          "name": "top",
+          "type": 8
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "1:1163650179154083951",
+  "lastEntityId": "2:1684346824670955740",
   "lastIndexId": "0:0",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",

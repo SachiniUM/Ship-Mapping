@@ -35,12 +35,12 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
   late Offset imagePosition = Offset.zero;
 
   List<WorkStation> workStations = [];
-  List<Color> colors = [Colors.blue, Colors.purpleAccent, Colors.tealAccent, Colors.brown, Colors.orange,Colors.deepPurple];
+  List<Color> colors = [Colors.blue, Colors.purpleAccent, Colors.tealAccent, Colors.brown, Colors.orange,  Colors.cyan, Colors.pinkAccent, Colors.amberAccent, Colors.deepPurple, Colors.indigo];
   List<String> selectedWorkStationIds = [];
 
   int _draggingIndex = -1;
   Offset _draggingOffset = Offset.zero;
-  final int maxWorkStations = 6;
+  final int maxWorkStations = 10;
 
   List<String> workStationId = [];
   Future<void>? workStationListFuture;
@@ -79,9 +79,14 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
 
       // Define your initial workstations
       List<WorkStation> initialWorkStations = [
-        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.65, top: 0.62),
-        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.69, top: 0.41),
-        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.3, top: 0.78),
+        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.95, top: 0.53,category: '',filter: ''),
+        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.53, top: 0.35,category: '',filter: ''),
+        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.17, top: 0.59,category: '',filter: ''),
+        WorkStation(id: 4,workStationId: 'I2S-130', left: 0.16, top: 0.39,category: '',filter: ''),
+        WorkStation(id: 5,workStationId: 'I2S-140', left: 0.76, top: 0.34,category: '',filter: ''),
+        WorkStation(id: 6,workStationId: 'I2S-150', left: 0.80, top: 0.68,category: '',filter: ''),
+        WorkStation(id: 7,workStationId: 'I2S-160', left: 0.43, top: 0.53,category: '',filter: ''),
+        WorkStation(id: 8,workStationId: 'I2S-170', left: 0.77, top: 0.53,category: '',filter: ''),
         // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
         // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
       ];
@@ -145,7 +150,7 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
   void _addWorkStation() {
     if (workStations.length < maxWorkStations) {
       setState(() {
-        workStations.add(WorkStation(left: 0.5, top: 0.5, id: 0)); // Default to (0.5, 0.5)
+        workStations.add(WorkStation(left: 0.5, top: 0.5, id: 0,category: '',filter: ''),); // Default to (0.5, 0.5)
       });
     }
   }
@@ -173,13 +178,13 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
     String apiEndPoint =
         "main/ifsapplications/projection/v1/WorkTypesHandling.svc/WorkTypeSet"; //api endpoint
 
-    Map<String, dynamic>? queryParameters = {
-      "\$filter":"((startswith(WorkTypeId,'I2S')))",
-      // "\$top":"6"
-    };
+    // Map<String, dynamic>? queryParameters = {
+    //   "\$filter":"((startswith(WorkTypeId,'I2S')))",
+    //   // "\$top":"6"
+    // };
 
-    var response = await serverCall.getWithParameters(
-        UserData.accessToken, apiEndPoint, queryParameters,widget.refreshTokenFunction); //call the getWithParameters method to get the work tasks
+    var response = await serverCall.get(
+        UserData.accessToken, apiEndPoint,widget.refreshTokenFunction);
 
     List<String> workStationIdsOnline = [];
     if (response.statusCode == 200) {
@@ -390,7 +395,7 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
   }
 
   List<Rect> _rectsFromWorkStations() {
-    var height = MediaQuery.of(context).size.shortestSide * 0.08;
+    var height = MediaQuery.of(context).size.shortestSide * 0.05;
     return workStations.map((ws) => Rect.fromCenter(
       center: Offset(ws.left * imageSize.width, ws.top * imageSize.height),
       width: height,
@@ -399,7 +404,7 @@ class _CustomPainterDraggableEditState extends State<CustomPainterDraggableEdit>
   }
 
   void _checkDragStart(Offset localPosition) {
-    var height = MediaQuery.of(context).size.shortestSide * 0.08;
+    var height = MediaQuery.of(context).size.shortestSide * 0.05;
     for (int i = 0; i < workStations.length; i++) {
       final rect = Rect.fromCenter(
         center: Offset(workStations[i].left * imageSize.width, workStations[i].top * imageSize.height),

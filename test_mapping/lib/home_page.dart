@@ -57,11 +57,19 @@ class _HomePageState extends State<HomePage> {
             ),
             CustomButton(
               text: 'Display Popup Options',
-              routeName: '/displayPopupOptions',
+              routeName: '/tableDisplay',
             ),
             CustomButton(
               text: 'Edit Workstations',
               routeName: '/dragAndDropEdit',
+            ),
+            CustomButton(
+              text: 'View Architecture',
+              routeName: '/viewArchitecture',
+            ),
+            CustomButton(
+              text: 'Edit Architecture',
+              routeName: '/editArchitecture',
             ),
           ],
         ),

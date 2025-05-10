@@ -65,14 +65,7 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
   List<WorkStation> storedWorkStations = [];
 
   List<Rect> rects = [];
-  List<Color> colors = [
-    Colors.blue,
-    Colors.purpleAccent,
-    Colors.tealAccent,
-    Colors.brown,
-    Colors.orange,
-    Colors.deepPurple
-  ];
+  List<Color> colors = [Colors.blue, Colors.purpleAccent, Colors.tealAccent, Colors.brown, Colors.orange,  Colors.cyan, Colors.pinkAccent, Colors.amberAccent, Colors.deepPurple, Colors.indigo];
   List<WorkTask> workTasks = [];
   List<bool> tickedStatuses = [true, true, true];
   String selectedFilter = 'Status';
@@ -198,9 +191,14 @@ class _PopupDisplayOptionsState extends State<PopupDisplayOptions> with WidgetsB
 
       // Define your initial workstations
       List<WorkStation> initialWorkStations = [
-        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.65, top: 0.62),
-        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.69, top: 0.41),
-        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.3, top: 0.78),
+        WorkStation(id: 1,workStationId: 'I2S-100', left: 0.9, top: 0.44,category: '',filter: ''),
+        WorkStation(id: 2,workStationId: 'I2S-110', left: 0.46, top: 0.26,category: '',filter: ''),
+        WorkStation(id: 3,workStationId: 'I2S-120', left: 0.10, top: 0.75,category: '',filter: ''),
+        WorkStation(id: 4,workStationId: 'I2S-130', left: 0.11, top: 0.26,category: '',filter: ''),
+        WorkStation(id: 5,workStationId: 'I2S-140', left: 0.68, top: 0.26,category: '',filter: ''),
+        WorkStation(id: 6,workStationId: 'I2S-150', left: 0.6, top: 0.70,category: '',filter: ''),
+        WorkStation(id: 7,workStationId: 'I2S-160', left: 0.49, top: 0.54,category: '',filter: ''),
+        WorkStation(id: 8,workStationId: 'I2S-170', left: 0.62, top: 0.54,category: '',filter: ''),
         // WorkStation(workStationId: '4', left: 0.3, top: 0.8),
         // WorkStation(workStationId: 5, left: 0.2, top: 0.1),
       ];

@@ -5,6 +5,8 @@ import 'package:test_mapping/adminPages/change_drawing.dart';
 import 'package:test_mapping/adminPages/configurations.dart';
 import 'package:test_mapping/config/user_data.dart';
 import 'package:test_mapping/coordinates.dart';
+import 'package:test_mapping/createArchitecture/edit_architecture.dart';
+import 'package:test_mapping/createArchitecture/view_architecture.dart';
 import 'package:test_mapping/pages/drag_drop_edit.dart';
 import 'package:test_mapping/drag_drop_lock.dart';
 import 'package:test_mapping/global_key.dart';
@@ -12,6 +14,7 @@ import 'package:test_mapping/home_page.dart';
 import 'package:test_mapping/popup_display.dart';
 import 'package:test_mapping/pages/popup_display_options.dart';
 import 'package:test_mapping/services/error_handling.dart';
+import 'package:test_mapping/table_display.dart';
 import 'package:test_mapping/zoom_pinch_overlay.dart';
 import 'package:test_mapping/select_legends.dart';
 import 'package:test_mapping/show_data.dart';
@@ -86,6 +89,18 @@ class _ShipMappingState extends State<ShipMapping> {
           refreshTokenFunction: refreshTokenFunction,
         ),
         '/displayPopupOptions': (context) => PopupDisplayOptions(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
+        '/tableDisplay': (context) => TableDisplay(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
+        '/viewArchitecture': (context) => ViewArchitecture(
+          logOutFunction: logOutFunction,
+          refreshTokenFunction: refreshTokenFunction,
+        ),
+        '/editArchitecture': (context) => EditArchitecture(
           logOutFunction: logOutFunction,
           refreshTokenFunction: refreshTokenFunction,
         ),
